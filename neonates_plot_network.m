@@ -39,27 +39,29 @@ end
 
 %% VOLTAGES
 
-v = 7;
+v = 1;
 
-clear tmp1 tmp2  slope
-bg = 0
-for i_inh = 1:10
-  for itr = 1:5
-    
-    d1 = hdf5read(sprintf('~/pupmod/decision_network/proc/pupmod_decision_network_inh%d_inp0_bg0_tr%d_voltage_v%d.h5',i_inh,itr,v),'volt_D1');
-%     d2 = hdf5read(sprintf('~/pupmod/decision_network/proc/pupmod_decision_network_inh%d_inp0_bg0_tr%d_voltage_v%d.h5',i_inh,itr,v),'volt_D2');
-    
-[pxx(:,i_inh,itr),fxx]=pwelch((mean(d1,2)+mean(d2,2))./2,hanning(4000),2000,2:0.25:40,1000);
-  tmp = nanmean(pxx(:,i_inh,itr),3);
+clear  slope
 
-
-      X = [ones(1,length(fxx))' log10(fxx)'];
-    Y = log10(tmp);
-    tmp = X\Y;   
-   slope(i_inh,itr)= tmp(2);
-
+for iampa = 0:20
+  iampa
+  for iinp = 0:2
+    for igaba = 0:21
+      for itr = 0
+        
+        v = hdf5read(sprintf('~/neonates/proc/v1/neonates_network_voltage_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',iampa,inmda, igaba, iinp,itr,v),'volt_E');
+        %     d2 = hdf5read(sprintf('~/pupmod/decision_network/proc/pupmod_decision_network_inh%d_inp0_bg0_tr%d_voltage_v%d.h5',i_inh,itr,v),'volt_D2');
+        
+        [pxx,fxx]=pwelch(nanmean(v,2),hanning(4000),2000,2:0.25:40,10000);
+        
+        
+        X = [ones(1,length(fxx))' log10(fxx)'];
+        Y = log10(pxx)';
+        tmp = X\Y;
+        slope(iampa+1,igaba+1,iinp+1,itr+1)= tmp(2);
+        
+      end
+    end
   end
-  
-
 end
 

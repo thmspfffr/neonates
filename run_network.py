@@ -52,6 +52,9 @@ if __name__ == '__main__':
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
     mean_corr = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
 
+    defaultclock = Clock(dt=0.1*ms,t=0*ms,order=0,makedefaultclock=True) # use different clock to change sampling rate
+    voltage_clock = EventClock(dt=10*ms,t=0*ms,order=1,makedefaultclock=False) # use different clock to change sampling rate
+
     #------------------------------------------------------------------------------ 
     # Run simulation
     #------------------------------------------------------------------------------ 
@@ -67,8 +70,9 @@ if __name__ == '__main__':
                           call(['touch', fn])
                       else:
                           continue
-                      #  initialize  
+                      #  initialize 
                       defaultclock.reinit()
+                      voltage_clock.reinit()
                       clear(True) 
 
                       print("Computing INPUT%d, GABA%d, AMPA%d, trial%d ...") % (iinp, igaba,iampa,itr)
@@ -100,8 +104,8 @@ if __name__ == '__main__':
                       # record instantaneous inhibitory populations activity
                       R_I = PopulationRateMonitor(popI, bin=5*ms)
                       # record voltage
-                      Vm_E = StateMonitor(popE, 'V', record=True)
-                      Vm_I = StateMonitor(popI, 'V', record=True)
+                      Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
+                      Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
 
                       #------------------------------------------------------------------------------
                       # Run the simulation

@@ -130,10 +130,8 @@ if __name__ == '__main__':
                       # record voltage
                       Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
                       Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
-
-                      # record current
-                      I_E = StateMonitor(popE, 'I', record=True, clock=myclock)
-                      I_I = StateMonitor(popI, 'I', record=True, clock=myclock)
+                      I_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
+                      I_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
 
                       #------------------------------------------------------------------------------
                       # Run the simulation
@@ -198,14 +196,10 @@ if __name__ == '__main__':
 
                       volt_E = Vm_E.values
                       volt_I = Vm_I.values
-                      curr_E = I_E.values
-                      curr_I = I_I.values
 
                       hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_voltage_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,itr,v) ), 'w')
                       hf.create_dataset('volt_E', data=volt_E)
                       hf.create_dataset('volt_I', data=volt_I)
-                      hf.create_dataset('curr_E', data=curr_E)
-                      hf.create_dataset('curr_I', data=curr_I)
                       hf.close()
 
 
