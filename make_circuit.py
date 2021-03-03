@@ -21,7 +21,7 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     # Populations
     N = 400                                     # Total number of neurons
     f_inh = 0.20                                  # Fraction of inhibitory neurons
-    NE = int(N * (1.0 - f_inh))                  # Number of excitatory neurons (400)
+    NE = int(N * (1.0 - f_inh))                  # Number of excitatory neurons (320)
     NI = int(N * f_inh)                          # Number of inhibitory neurons (80)
     
     # Connectivity - local recurrent connections
@@ -68,20 +68,24 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     
     # Neuron equations
     eqsE = '''
-    dV/dt = (-gea*(V-VrevE) - gen*(V-VrevE)/(1.0+exp(-V/mV*0.062)/3.57) - gi*(V-VrevI) - (V-Vl)) / (tau): volt
+    dV/dt = (-gea*(V-VrevE) - gen*(V-VrevE)/(1.0+exp(-V/mV*0.062)/3.57) - gi*(V-VrevI) - (V-Vl)) / (tau) + I/Cm: volt
     dgea/dt = -gea/(tau_AMPA) : 1
     dgi/dt = -gi/(tau_GABA) : 1
     dspre/dt = -spre/(tau_NMDA_decay)+alpha_NMDA*xpre*(1-spre) : 1
     dxpre/dt= -xpre/(tau_NMDA_rise) : 1
     gen : 1
     tau : second
+    I : nA
+    Cm : nF
     '''
     eqsI = '''
-    dV/dt = (-gea*(V-VrevE) - gen*(V-VrevE)/(1.0+exp(-V/mV*0.062)/3.57) - gi*(V-VrevI) - (V-Vl)) / (tau): volt
+    dV/dt = (-gea*(V-VrevE) - gen*(V-VrevE)/(1.0+exp(-V/mV*0.062)/3.57) - gi*(V-VrevI) - (V-Vl)) / (tau) + I/Cm: volt
     dgea/dt = -gea/(tau_AMPA) : 1
     dgi/dt = -gi/(tau_GABA) : 1
     gen : 1
     tau : second
+    I : nA
+    Cm : nF
     '''
 
     # Set up the integration circuit
@@ -89,8 +93,10 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     popI = NeuronGroup(NI, model=eqsI, threshold=Vt, reset=Vr, refractory=tau_refI)
     popE.tau = CmE / gLeakE
     popI.tau = CmI / gLeakI      
-    popE.I = 0.0
-    popI.I = 0.0
+    popE.I = 0.0 * nA
+    popI.I = 0.0 * nA
+    popE.Cm = CmE
+    popI.Cm = CmI
     
     # Connections involving AMPA synapses
     C_DE_DE_AMPA = Connection(popE, popE, 'gea', delay = d)             
