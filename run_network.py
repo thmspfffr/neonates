@@ -44,9 +44,9 @@ if __name__ == '__main__':
     #------------------------------------------------------------------------------ 
     # Inputs: stimululus, AMPA, NMDA, GABA
     inputs      = np.linspace(0.7,1.1,3)
-    AMPA_mods   = np.linspace(3,5,21)
+    AMPA_mods   = np.linspace(2,6,41)
     NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(1.7,3.8,22)
+    GABA_mods   = np.linspace(0.7,4.8,42)
     #------------------------------------------------------------------------------ 
     # preallocate
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
