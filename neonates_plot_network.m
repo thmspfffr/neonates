@@ -11,7 +11,7 @@ outp.spikesE = zeros(320,30000,21,22,'uint8');
 outp.spikesI = zeros(80,30000,21,22,'uint8');
 % outp.r =  zeros(19,22,3);
 % outp.fr =  zeros(19,22,3);
-for iinp = 0:2
+for iinp = 0
 for iampa = 0:20
   iampa
     for igaba = 0:21

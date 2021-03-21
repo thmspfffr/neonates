@@ -27,12 +27,6 @@ root_dir = '/home/tpfeffer/neonates/'
 
 from make_circuit import make_circuit
 
-# Version
-v = 1
-ntrls = 1;
-
-if not(os.path.exists('/home/tpfeffer/neonates/proc/v%d' %v)):
-    os.makedirs('/home/tpfeffer/neonates/proc/v%d' %v)
 
 if __name__ == '__main__':
 
@@ -44,11 +38,15 @@ if __name__ == '__main__':
     stim_on  = 3000.0 * ms
     stim_off = 6000.0 * ms
     #------------------------------------------------------------------------------ 
+    # VERSION 1: Parameters from run_network.py
+    #------------------------------------------------------------------------------ 
+    v = 1
     # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.7,1.1,3)
-    AMPA_mods   = np.linspace(3,5,21)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(1.7,3.8,22)
+    inputs      = np.array([0.7])
+    AMPA_mods   = np.array([2])
+    NMDA_mods   = np.array([1])
+    GABA_mods   = np.linspace(1.6,3.4,16)
+    ntrls       = 10;
     #------------------------------------------------------------------------------ 
     # preallocate
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
@@ -58,154 +56,166 @@ if __name__ == '__main__':
     #------------------------------------------------------------------------------ 
     # Run simulation
     #------------------------------------------------------------------------------ 
+
+    if not(os.path.exists('/home/tpfeffer/neonates/proc/v%d' %v)):
+      os.makedirs('/home/tpfeffer/neonates/proc/v%d' %v)
+
     for itr in range(ntrls):
       # Loop through exp parameters
       for igaba in range(0,GABA_mods.size): 
           for iinp in range(0,inputs.size):
               for iampa in range(0,AMPA_mods.size):
                   for inmda in range(0,NMDA_mods.size):
+                      for stim_protocol in range(1,3): # 1 = inhibit PYR / 2 = excite IN
 
-                      fn = os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d_processing.txt') % (v,iampa, inmda, igaba, iinp,itr,v)
-                      if os.path.isfile(fn)==False:
-                          call(['touch', fn])
-                      else:
-                          continue
+                        fn = os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_iampa%d_inmda%d_gaba%d_inp%d_stim%d_tr%d_v%d_processing.txt') % (v,iampa, inmda, igaba, iinp,stim_protocol,itr,v)
+                        if os.path.isfile(fn)==False:
+                            call(['touch', fn])
+                        else:
+                            continue
 
-                      #  initialize  
-                      defaultclock.reinit(t=0.0*ms)
-                      myclock.reinit(t=0.0*ms)
-                      #reinit_default_clock(0.0 * ms)
+                        #  initialize  
+                        defaultclock.reinit(t=0.0*ms)
+                        myclock.reinit(t=0.0*ms)
+                        #reinit_default_clock(0.0 * ms)
 
-                      clear(True) 
+                        clear(True) 
 
-                      print("Computing INPUT%d, GABA%d, AMPA%d, trial%d ...") % (iinp, igaba,iampa,itr)
+                        print("Computing INPUT%d, GABA%d, AMPA%d, trial%d ...") % (iinp, igaba,iampa,itr)
 
-                      inp = inputs[0]
-                      inh = 1
-                      AMPA_mod = AMPA_mods[20]
-                      NMDA_mod = NMDA_mods[0]
-                      GABA_mod = GABA_mods[2]
+                        inp = inputs[0]
+                        AMPA_mod = AMPA_mods[iampa]
+                        NMDA_mod = NMDA_mods[inmda]
+                        GABA_mod = GABA_mods[igaba]
 
-                      Dgroups, Dconnections, Dnetfunctions, subgroups = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
+                        Dgroups, Dconnections, Dnetfunctions, subgroups = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
 
-                      # get populations from the integrations circuit
-                      popE = Dgroups['DE']
-                      popI = Dgroups['DI']
+                        # get populations from the integrations circuit
+                        popE = Dgroups['DE']
+                        popI = Dgroups['DI']
 
-                      #------------------------------------------------------------------------------
-                      # Set up external stimulation (optogenetics protocol)
-                      #------------------------------------------------------------------------------
-                      stim = np.zeros([len(popI),1000 * int(stim_off-stim_on)])
-                      rand_idx = np.random.choice(np.linspace(0,len(popI)-1,len(popI)),10,replace=False)
-                      f = np.vectorize(np.int); rand_idx = f(rand_idx)
-                      stim[rand_idx,:] = np.matlib.repmat(np.linspace(0,0.3,1000 * int(stim_off-stim_on)),10,1)
-                      
-                      @network_operation(myclock)
-                      def update_input(myclock):
-                          if myclock.t >= stim_on and myclock.t < stim_off:
-                              #print('%d: Stim' %myclock.t)
-                              popI.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
-                              #popE.I = 3.0 * amp
-                          else:
-                              #print('%d: No stim' %myclock.t)
-                              popI.I = 0.0 * nA
+                        #------------------------------------------------------------------------------
+                        # Set up external stimulation (optogenetics protocol)
+                        #------------------------------------------------------------------------------
 
-                      #------------------------------------------------------------------------------
-                      # ---- set initial conditions (random)
-                      popE.gen = popE.gen * (1 + 0.2 * rand(popE.__len__()))
-                      popI.gen = popI.gen * (1 + 0.2 * rand(popI.__len__()))
-                      popE.V = popE.V + rand(popE.__len__()) * 2 * mV
-                      popI.V = popI.V + rand(popI.__len__()) * 2 * mV
-                      #popE.I = 0.0 * nA
-                      #popI.I = 0.0 * nA
+                        if stim_protocol == 1: # inhibit pyramidal cells
+                          stim = np.zeros([len(popE),1000 * int(stim_off-stim_on)])
+                          rand_idx = np.random.choice(np.linspace(0,len(popE)-1,len(popE)),np.int(0.1*len(popE)),replace=False)
+                          f = np.vectorize(np.int); rand_idx = f(rand_idx)
+                          stim[rand_idx,:] = np.matlib.repmat(np.linspace(0,-0.3,1000 * int(stim_off-stim_on)),np.int(0.1*len(popE)),1)
+                        elif stim_protocol == 2: # excite inhibitory cells
+                          stim = np.zeros([len(popI),1000 * int(stim_off-stim_on)])
+                          rand_idx = np.random.choice(np.linspace(0,len(popI)-1,len(popI)),np.int(0.1*len(popI)),replace=False)
+                          f = np.vectorize(np.int); rand_idx = f(rand_idx)
+                          stim[rand_idx,:] = np.matlib.repmat(np.linspace(0,0.3,1000 * int(stim_off-stim_on)),np.int(0.1*len(popI)),1)
 
-                      # record spikes of excitatory/inhibitory neurons
-                      Sp_E = SpikeMonitor(popE, record=True)           
-                      Sp_I = SpikeMonitor(popI, record=True)
+                        @network_operation(myclock)
+                        def update_input(myclock):
+                            if myclock.t >= stim_on and myclock.t < stim_off:
+                                if stim_protocol == 1: # inhibit pyramidal cells
+                                  popE.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
+                                if stim_protocol == 2: # inhibit pyramidal cells
+                                  popI.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
+                            else:
+                                popI.I = 0.0 * nA
+                                popE.I = 0.0 * nA
 
-                      # record instantaneous excitatory/inhibitory population activity
-                      R_E = PopulationRateMonitor(popE, bin=5*ms)
-                      R_I = PopulationRateMonitor(popI, bin=5*ms)
-                      
-                      # record voltage
-                      Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
-                      Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
+                        #------------------------------------------------------------------------------
+                        # ---- set initial conditions (random)
+                        popE.gen = popE.gen * (1 + 0.2 * rand(popE.__len__()))
+                        popI.gen = popI.gen * (1 + 0.2 * rand(popI.__len__()))
+                        popE.V = popE.V + rand(popE.__len__()) * 2 * mV
+                        popI.V = popI.V + rand(popI.__len__()) * 2 * mV
+                        #popE.I = 0.0 * nA
+                        #popI.I = 0.0 * nA
 
-                      # record current
-                      #I_E = StateMonitor(popE, 'I', record=True, clock=myclock)
-                      #I_I = StateMonitor(popI, 'I', record=True, clock=myclock)
+                        # record spikes of excitatory/inhibitory neurons
+                        Sp_E = SpikeMonitor(popE, record=True)           
+                        Sp_I = SpikeMonitor(popI, record=True)
 
-                      #------------------------------------------------------------------------------
-                      # Run the simulation
-                      #------------------------------------------------------------------------------
-                      print("Running simulation...")
-                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, update_input, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I)
-                      net.prepare()
-                      net.run(runtime) 
+                        # record instantaneous excitatory/inhibitory population activity
+                        R_E = PopulationRateMonitor(popE, bin=5*ms)
+                        R_I = PopulationRateMonitor(popI, bin=5*ms)
 
-                      # convert to array and save output has .h5            
-                      spt_E = []; spt_E_idx = []
-                      spt_I = []; spt_I_idx = []
+                        # record voltage
+                        Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
+                        Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
 
-                      for ineuron in range(0,len(Sp_E.spiketimes)):
-                          spt_E = np.append(spt_E,Sp_E.spiketimes.values()[ineuron], axis=None)
-                          spt_E_idx = np.append(spt_E_idx,ml.repmat(ineuron,1,len(Sp_E.spiketimes.values()[ineuron])), axis=None)
+                        # record current
+                        #I_E = StateMonitor(popE, 'I', record=True, clock=myclock)
+                        #I_I = StateMonitor(popI, 'I', record=True, clock=myclock)
 
-                      for ineuron in range(0,len(Sp_I.spiketimes)):
-                          spt_I = np.append(spt_I,Sp_I.spiketimes.values()[ineuron], axis=None)
-                          spt_I_idx = np.append(spt_I_idx,ml.repmat(ineuron,1,len(Sp_I.spiketimes.values()[ineuron])), axis=None)
+                        #------------------------------------------------------------------------------
+                        # Run the simulation
+                        #------------------------------------------------------------------------------
+                        print("Running simulation...")
+                        net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, update_input, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I)
+                        net.prepare()
+                        net.run(runtime) 
 
-                      spt_E = np.vstack((spt_E,spt_E_idx))
-                      spt_I = np.vstack((spt_I,spt_I_idx))
+                        # convert to array and save output has .h5            
+                        spt_E = []; spt_E_idx = []
+                        spt_I = []; spt_I_idx = []
 
-                      # -------------------------------------------
-                      # COMPUTE SPIKE COUNT CORRELATIONS
-                      # -------------------------------------------
-                      print("Computing spike count correlations...")
-                      spikesE = dict()
-                      spikesI = dict()
-                      
-                      first_spike = 0 # start analysis at t = 0
-                      for ineuron in range(0,320):
-                          spikesE[ineuron] = SpikeTrain(spt_E[0][(spt_E[1]==ineuron) & (spt_E[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
-                      for ineuron in range(0,320):
-                          spikesI[ineuron] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
+                        for ineuron in range(0,len(Sp_E.spiketimes)):
+                            spt_E = np.append(spt_E,Sp_E.spiketimes.values()[ineuron], axis=None)
+                            spt_E_idx = np.append(spt_E_idx,ml.repmat(ineuron,1,len(Sp_E.spiketimes.values()[ineuron])), axis=None)
 
-                      stE = []; stI = []
-                      subsamp = 1
-                      matidx = np.triu_indices(len(range(0,len(spikesE),subsamp)),1)
-                      for isp in range(0,len(spikesE),subsamp):
-                          stE.append(spikesE[isp])
-                          stI.append(spikesI[isp])
+                        for ineuron in range(0,len(Sp_I.spiketimes)):
+                            spt_I = np.append(spt_I,Sp_I.spiketimes.values()[ineuron], axis=None)
+                            spt_I_idx = np.append(spt_I_idx,ml.repmat(ineuron,1,len(Sp_I.spiketimes.values()[ineuron])), axis=None)
 
-                      stsE=BinnedSpikeTrain(stE, binsize=1*pq.ms)
-                      stsI=BinnedSpikeTrain(stI, binsize=1*pq.ms)
+                        spt_E = np.vstack((spt_E,spt_E_idx))
+                        spt_I = np.vstack((spt_I,spt_I_idx))
 
-                      stsE_corr=BinnedSpikeTrain(stE, binsize=10*pq.ms)
-                      corr=elephant.spike_train_correlation.corrcoef(stsE_corr)
-  
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_spiketrain_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      hf.create_dataset('spike_train_E', data= stsE.to_array())
-                      hf.create_dataset('spike_train_I', data= stsI.to_array())
-                      hf.close() 
+                        # -------------------------------------------
+                        # COMPUTE SPIKE COUNT CORRELATIONS
+                        # -------------------------------------------
+                        print("Computing spike count correlations...")
+                        spikesE = dict()
+                        spikesI = dict()
 
-                      mean_corr = corr[matidx].mean()
+                        first_spike = 0 # start analysis at t = 0
+                        for ineuron in range(0,320):
+                            spikesE[ineuron] = SpikeTrain(spt_E[0][(spt_E[1]==ineuron) & (spt_E[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
+                        for ineuron in range(0,320):
+                            spikesI[ineuron] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
 
-                      print("Saving output...")
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_corr_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      hf.create_dataset('spt_E_corr', data=mean_corr)
-                      hf.close() 
+                        stE = []; stI = []
+                        subsamp = 1
+                        matidx = np.triu_indices(len(range(0,len(spikesE),subsamp)),1)
+                        for isp in range(0,len(spikesE),subsamp):
+                            stE.append(spikesE[isp])
+                            stI.append(spikesI[isp])
 
-                      volt_E = Vm_E.values
-                      volt_I = Vm_I.values
-                      #curr_E = I_E.values
-                      #curr_I = I_I.values
+                        stsE=BinnedSpikeTrain(stE, binsize=1*pq.ms)
+                        stsI=BinnedSpikeTrain(stI, binsize=1*pq.ms)
 
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_voltage_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,itr,v) ), 'w')
-                      hf.create_dataset('volt_E', data=volt_E)
-                      hf.create_dataset('volt_I', data=volt_I)
-                      #hf.create_dataset('curr_E', data=curr_E)
-                      #hf.create_dataset('curr_I', data=curr_I)
-                      hf.close()
+                        stsE_corr=BinnedSpikeTrain(stE, binsize=10*pq.ms)
+                        corr=elephant.spike_train_correlation.corrcoef(stsE_corr)
+
+                        hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_spiketrain_iampa%d_inmda%d_gaba%d_inp%d_stim%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,stim_protocol,itr,v), 'w')
+                        hf.create_dataset('spike_train_E', data= stsE.to_array())
+                        hf.create_dataset('spike_train_I', data= stsI.to_array())
+                        hf.close() 
+
+                        mean_corr = corr[matidx].mean()
+
+                        print("Saving output...")
+                        hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_corr_iampa%d_inmda%d_gaba%d_inp%d_stim%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,stim_protocol,itr,v), 'w')
+                        hf.create_dataset('spt_E_corr', data=mean_corr)
+                        hf.close() 
+
+                        volt_E = Vm_E.values
+                        volt_I = Vm_I.values
+                        #curr_E = I_E.values
+                        #curr_I = I_I.values
+
+                        hf = h5py.File(os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_voltage_iampa%d_inmda%d_gaba%d_inp%d_stim%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,stim_protocol,itr,v) ), 'w')
+                        hf.create_dataset('volt_E', data=volt_E)
+                        hf.create_dataset('volt_I', data=volt_I)
+                        #hf.create_dataset('curr_E', data=curr_E)
+                        #hf.create_dataset('curr_I', data=curr_I)
+                        hf.close()
 
 

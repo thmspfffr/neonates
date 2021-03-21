@@ -35,18 +35,27 @@ if not(os.path.exists('/home/tpfeffer/neonates/proc/v%d' %v)):
     os.makedirs('/home/tpfeffer/neonates/proc/v%d' %v)
 
 if __name__ == '__main__':
-
+    
     #------------------------------------------------------------------------------ 
-    # Simulation parameters 
+    # VERSION 1: Find plausible parameter range (coarse)
     #------------------------------------------------------------------------------ 
-    # Timing 
-    runtime = 30000.0 * ms 
-    #------------------------------------------------------------------------------ 
+    #v = 1
     # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.7,1.1,3)
-    AMPA_mods   = np.linspace(2,6,41)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(0.7,4.8,42)
+    #inputs      = np.linspace(0.7,1.1,3)
+    #AMPA_mods   = np.linspace(2,6,41)
+    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    #GABA_mods   = np.linspace(0.7,4.8,42)
+    #runtime     = 30000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 2: Simulate within plausible parameter range
+    #------------------------------------------------------------------------------ 
+    v = 2
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    inputs      = np.array([0.7])
+    AMPA_mods   = np.array([2])
+    NMDA_mods   = np.array([1])
+    GABA_mods   = np.linspace(1.6,3.4,16)
+    runtime     = 600000.0 * ms 
     #------------------------------------------------------------------------------ 
     # preallocate
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
