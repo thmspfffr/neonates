@@ -58,8 +58,8 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     alpha_NMDA = 0.5 * kHz                       # Saturation constant of NMDA-type conductances
 
     # Inputs
-    nu_ext_exc = inp*2000 * Hz                       # Firing rate of external Poisson input to excitatory neurons
-    nu_ext_inh = inp*2000 * Hz                       # Firing rate of external Poisson input to inhibitory neurons
+    nu_ext_exc = inp * 2000 * Hz                       # Firing rate of external Poisson input to excitatory neurons
+    nu_ext_inh = inp * 2000 * Hz                       # Firing rate of external Poisson input to inhibitory neurons
     stim_ext = 0 * Hz
 
     # -----------------------------------------------------------------------------------------------
