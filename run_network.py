@@ -52,10 +52,20 @@ if __name__ == '__main__':
     v = 2
     # Inputs: stimululus, AMPA, NMDA, GABA
     inputs      = np.array([0.7])
-    AMPA_mods   = np.array([2])
+    AMPA_mods   = np.linspace(1.8,2.2,5)
     NMDA_mods   = np.array([1])
-    GABA_mods   = np.linspace(1.6,3.4,16)
+    GABA_mods   = np.linspace(1.2,3.4,21)
     runtime     = 600000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 3: Simulate within plausible parameter range
+    #------------------------------------------------------------------------------ 
+    v = 3
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    inputs      = np.linspace(0.7,1.1,3)
+    AMPA_mods   = np.linspace(2,6,41)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(0.7,4.8,42)
+    runtime     = 60000.0 * ms 
     #------------------------------------------------------------------------------ 
     # preallocate
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])

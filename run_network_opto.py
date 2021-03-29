@@ -46,7 +46,7 @@ if __name__ == '__main__':
     AMPA_mods   = np.array([2])
     NMDA_mods   = np.array([1])
     GABA_mods   = np.linspace(1.6,3.4,16)
-    ntrls       = 10;
+    ntrls       = 50;
     #------------------------------------------------------------------------------ 
     # preallocate
     resp = np.zeros([len(AMPA_mods), len(NMDA_mods), len(GABA_mods), len(inputs)])
@@ -66,7 +66,7 @@ if __name__ == '__main__':
           for iinp in range(0,inputs.size):
               for iampa in range(0,AMPA_mods.size):
                   for inmda in range(0,NMDA_mods.size):
-                      for stim_protocol in range(1,3): # 1 = inhibit PYR / 2 = excite IN
+                      for stim_protocol in range(1,3): # 1 = inhibit IN / 2 = excite IN
 
                         fn = os.path.expanduser(root_dir + 'proc/opto/v%d/neonates_network_opto_iampa%d_inmda%d_gaba%d_inp%d_stim%d_tr%d_v%d_processing.txt') % (v,iampa, inmda, igaba, iinp,stim_protocol,itr,v)
                         if os.path.isfile(fn)==False:
@@ -98,11 +98,11 @@ if __name__ == '__main__':
                         # Set up external stimulation (optogenetics protocol)
                         #------------------------------------------------------------------------------
 
-                        if stim_protocol == 1: # inhibit pyramidal cells
-                          stim = np.zeros([len(popE),1000 * int(stim_off-stim_on)])
-                          rand_idx = np.random.choice(np.linspace(0,len(popE)-1,len(popE)),np.int(0.1*len(popE)),replace=False)
+                        if stim_protocol == 1: # inhibit inhibitory cells
+                          stim = np.zeros([len(popI),1000 * int(stim_off-stim_on)])
+                          rand_idx = np.random.choice(np.linspace(0,len(popI)-1,len(popI)),np.int(0.1*len(popI)),replace=False)
                           f = np.vectorize(np.int); rand_idx = f(rand_idx)
-                          stim[rand_idx,:] = np.matlib.repmat(np.linspace(0,-0.3,1000 * int(stim_off-stim_on)),np.int(0.1*len(popE)),1)
+                          stim[rand_idx,:] = np.matlib.repmat(np.linspace(0,-0.3,1000 * int(stim_off-stim_on)),np.int(0.1*len(popI)),1)
                         elif stim_protocol == 2: # excite inhibitory cells
                           stim = np.zeros([len(popI),1000 * int(stim_off-stim_on)])
                           rand_idx = np.random.choice(np.linspace(0,len(popI)-1,len(popI)),np.int(0.1*len(popI)),replace=False)
@@ -112,9 +112,9 @@ if __name__ == '__main__':
                         @network_operation(myclock)
                         def update_input(myclock):
                             if myclock.t >= stim_on and myclock.t < stim_off:
-                                if stim_protocol == 1: # inhibit pyramidal cells
-                                  popE.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
-                                if stim_protocol == 2: # inhibit pyramidal cells
+                                if stim_protocol == 1: # inhibit inhibitory cells
+                                  popI.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
+                                if stim_protocol == 2: # excite inhibitory cells
                                   popI.I = stim[: ,int( (myclock.t - stim_on) / (1 * ms))] * nA
                             else:
                                 popI.I = 0.0 * nA
