@@ -1,14 +1,16 @@
 %% load data
 
-inps = 0;
-output_folder = 'E:\PFC micro\results\modelledSTTC\'; % where to save
+inps = 0:2;
+output_folder = '~/neonates/proc/v2/'; % where to save
 lags = [5, 10, 50, 100, 500, 1000] / 1000;
 num_units = 400;
+v=1;
 
 for inp = inps
     
-    load(['E:\PFC micro\results\modelled_spikes\neonates_spiking_inp', num2str(inp), '_v2.mat'])
-        
+  
+load(sprintf('~/neonates/proc/neonates_spiking_inp%d_v%d.mat',inp,v))
+
     %% compute xCorr and/or Tiling Coefficient
     PYRs = outp.spikesE;
     INs = outp.spikesI;
@@ -16,6 +18,14 @@ for inp = inps
     
     for ampa = 1 : size(PYRs, 3)
         for gaba = 1 : size(PYRs, 4)
+          
+          fprintf('Processing inp%d, ampa%d, gaba%d...\n',inp, ampa,gaba)
+            
+            fn = sprintf('mainSTTCmodel_ampa%d_gaba%d_v%d',ampa,gaba,v);
+            if tp_parallel(fn,output_folder,1,0)
+              continue
+            end
+            
             PYRspikes = PYRs(:, :, ampa, gaba, 1);
             INspikes = INs(:, :, ampa, gaba, 1);
             spike_matrix = cat(1, PYRspikes, INspikes);
@@ -41,3 +51,15 @@ for inp = inps
         end
     end
 end
+
+
+%%
+% 
+% for iampa=1:5
+%   for igaba=1:21
+%     igaba
+%     load(sprintf('/home/tpfeffer/neonates/proc/v2/STTC_v2_%d_%d_1.mat',iampa,igaba))
+%     sttc(iampa,igaba,:)=squeeze(mean(STTC));
+%   end
+% end
+
