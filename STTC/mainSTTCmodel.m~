@@ -74,14 +74,14 @@ end
 %%
 figure_w
 
-inp = 2;
+inp = 3;
 AMPA_mods   = linspace(2,6,41);
 GABA_mods   = linspace(0.7,4.8,42);
 %     #runtime     = 30000.0 * ms 
 
 for i = 1 : 6
 subplot(3,2,i)
-imagesc(sttc(:,:,inp,i),[0 .2]); axis square
+imagesc(sttc(:,:,inp,i),[0 .1]); axis square
 colormap(plasma)
 set(gca,'xtick',1:10:length(GABA_mods),'xticklabel',GABA_mods(1:10:length(GABA_mods)),'fontsize',6,'ydir','normal'); 
 set(gca,'ytick',1:10:length(AMPA_mods),'yticklabel',AMPA_mods(1:10:length(AMPA_mods)),'fontsize',6,'ydir','normal'); 

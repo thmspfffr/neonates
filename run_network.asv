@@ -37,21 +37,21 @@ if __name__ == '__main__':
     #------------------------------------------------------------------------------ 
     v = 1
     # Inputs: stimululus, AMPA, NMDA, GABA
-    #inputs      = np.linspace(0.7,1.1,3)
-    #AMPA_mods   = np.linspace(2,6,41)
-    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    #GABA_mods   = np.linspace(0.7,4.8,42)
-    #runtime     = 30000.0 * ms 
+    inputs      = np.linspace(0.7,1.1,3)
+    AMPA_mods   = np.linspace(2,6,41)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(0.7,4.8,42)
+    runtime     = 10000.0 * ms 
     #------------------------------------------------------------------------------ 
     # VERSION 2: Simulate within plausible parameter range
     #------------------------------------------------------------------------------ 
-    v = 2
+    #v = 2
     # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.1,0.7,5)
-    AMPA_mods   = np.linspace(0.6,8,60)
-    NMDA_mods   = np.linspace(0.8,1.2,3)
-    GABA_mods   = np.linspace(0.2,4,41)
-    runtime     = 30000.0 * ms 
+    #inputs      = np.linspace(0.1,0.7,5)
+    #AMPA_mods   = np.linspace(0.6,8,60)
+    #NMDA_mods   = np.linspace(0.8,1.2,3)
+    #GABA_mods   = np.linspace(0.2,4,41)
+    #runtime     = 10000.0 * ms 
     #------------------------------------------------------------------------------ 
     # VERSION 3: Simulate within plausible parameter range
     #------------------------------------------------------------------------------ 
@@ -93,10 +93,10 @@ if __name__ == '__main__':
 
                       print("Computing INPUT%d, GABA%d, AMPA%d, trial%d ...") % (iinp, igaba,iampa,itr)
 
-                      inp = inputs[iinp]
-                      AMPA_mod = AMPA_mods[iampa]
-                      NMDA_mod = NMDA_mods[inmda]
-                      GABA_mod = GABA_mods[igaba]
+                      inp = 6#inputs[iinp]
+                      AMPA_mod = 20#AMPA_mods[iampa]
+                      NMDA_mod = 2#NMDA_mods[inmda]
+                      GABA_mod = 20#GABA_mods[igaba]
                       
                       Dgroups, Dconnections, Dnetfunctions, subgroups = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
 
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
                       # COMPUTE SPIKE COUNT CORRELATIONS
                       # -------------------------------------------
-                      spikes = dict(); spikesI = dict(); frE = np.zeros([320,1]); frI = np.zeros([80,1])
+                      spikes = dict(); frE = np.zeros([320,1]); frI = np.zeros([80,1])
 
                       first_spike = 0 # start analysis at t = 0
                       for ineuron in range(0,320):
@@ -156,32 +156,8 @@ if __name__ == '__main__':
                       for ineuron in range(0,80):
                           spikes[ineuron+320] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
                           frI[ineuron] = spikes[ineuron+320].shape[0]
-                      
-                      frE=np.mean(frE)/10
-                      frI=np.mean(frI)/10
 
-                      print('FR_E = %.3f - FR_I = %.3f' % (frE, frI))
-
-                      # OMIT RUNS WHERE FIRING RATES ARE TOO HIGH 
-                      # (not plausible and STTC computation too costly)
-                      
-                      if frE > 2 or frI > 2:
-                          sttc = np.zeros([400,400,4])*np.nan
-                          pxx  = np.zeros([1, 129])*np.nan
-                          fxx  = np.zeros([1, 129])*np.nan
-
-                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_sttc_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                          hf.create_dataset('sttc', data=sttc,'frE',data=FR_E,'frI',data=FR_I)
-                          hf.close() 
-
-                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_power_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,itr,v) ), 'w')
-                          hf.create_dataset('pxx', data=pxx)
-                          hf.create_dataset('fxx', data=fxx)
-                          hf.close()
-
-                          continue
-          
-                      
+                
                       #stE = []; stI = []
                       #subsamp = 1
                       #matidx = np.triu_indices(len(range(0,len(spikesE),subsamp)),1)
@@ -194,8 +170,9 @@ if __name__ == '__main__':
 
                       #stsE_corr=BinnedSpikeTrain(stE, binsize=10*pq.ms)
                       #corr=elephant.spike_train_correlation.corrcoef(stsE_corrfor)
-                      lags = np.array([0.1, 1])
+                      lags = np.array([0.01, 0.1, 1, 10])
                       sttc = np.zeros([len(spikes),len(spikes),len(lags)])
+
                       for ilag in range(0,len(lags)): 
                           print('Computing STTC for Lag %d ms' % lags[ilag]) 
                           for ineuron in range(0,len(spikes)):
@@ -204,7 +181,7 @@ if __name__ == '__main__':
                                   sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
       
                       hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_sttc_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      hf.create_dataset('sttc', data=sttc,'frE',data=FR_E,'frI',data=FR_I)
+                      hf.create_dataset('sttc', data=sttc)
                       hf.close() 
 
                       print("Computing power spectra ...")
