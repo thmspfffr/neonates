@@ -51,7 +51,7 @@ if __name__ == '__main__':
     AMPA_mods   = np.linspace(0.6,8,60)
     NMDA_mods   = np.linspace(0.8,1.2,3)
     GABA_mods   = np.linspace(0.2,4,41)
-    runtime     = 30000.0 * ms 
+    runtime     = 20000.0 * ms 
     #------------------------------------------------------------------------------ 
     # VERSION 3: Simulate within plausible parameter range
     #------------------------------------------------------------------------------ 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                       for ineuron in range(0,80):
                           spikes[ineuron+320] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
                           frI[ineuron] = spikes[ineuron+320].shape[0]
-                      
+
                       frE=np.mean(frE)/10
                       frI=np.mean(frI)/10
 
@@ -166,35 +166,25 @@ if __name__ == '__main__':
                       # (not plausible and STTC computation too costly)
                       
                       if frE > 2 or frI > 2:
-                          sttc = np.zeros([400,400,4])*np.nan
+                          sttcE = np.zeros([1, 3])*np.nan
+                          sttcI = np.zeros([1, 3])*np.nan
+                          sttc_all = np.zeros([1, 3])*np.nan
                           pxx  = np.zeros([1, 129])*np.nan
                           fxx  = np.zeros([1, 129])*np.nan
 
-                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_sttc_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                          hf.create_dataset('sttc', data=sttc,'frE',data=FR_E,'frI',data=FR_I)
-                          hf.close() 
-
-                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_power_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,itr,v) ), 'w')
+                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
+                          hf.create_dataset('sttc_all', data=sttc_all)
+                          hf.create_dataset('sttcE', data=sttcE)
+                          hf.create_dataset('sttcI', data=sttcI)
+                          hf.create_dataset('frE', data=frE)
+                          hf.create_dataset('frI', data=frI)
                           hf.create_dataset('pxx', data=pxx)
                           hf.create_dataset('fxx', data=fxx)
-                          hf.close()
+                          hf.close() 
 
                           continue
           
-                      
-                      #stE = []; stI = []
-                      #subsamp = 1
-                      #matidx = np.triu_indices(len(range(0,len(spikesE),subsamp)),1)
-                      #for isp in range(0,len(spikesE),subsamp):
-                      #    stE.append(spikesE[isp])
-                      #    stI.append(spikesI[isp])
-
-                      #stsE=BinnedSpikeTrain(stE, binsize=1*pq.ms)
-                      #stsI=BinnedSpikeTrain(stI, binsize=1*pq.ms)
-
-                      #stsE_corr=BinnedSpikeTrain(stE, binsize=10*pq.ms)
-                      #corr=elephant.spike_train_correlation.corrcoef(stsE_corrfor)
-                      lags = np.array([0.1, 1])
+                      lags = np.array([0.01, 0.1, 1])
                       sttc = np.zeros([len(spikes),len(spikes),len(lags)])
                       for ilag in range(0,len(lags)): 
                           print('Computing STTC for Lag %d ms' % lags[ilag]) 
@@ -203,10 +193,10 @@ if __name__ == '__main__':
                               for jneuron in range(0,len(spikes)):
                                   sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
       
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_sttc_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      hf.create_dataset('sttc', data=sttc,'frE',data=FR_E,'frI',data=FR_I)
-                      hf.close() 
-
+                      sttcE = sttc[0:320,0:320,:].mean(axis=1).mean(axis=0)
+                      sttcI = sttc[320:400,320:400,:].mean(axis=1).mean(axis=0)
+                      sttc_all = sttc.mean(axis=1).mean(axis=0)
+ 
                       print("Computing power spectra ...")
                       
                       pxx = np.zeros([400,129])
@@ -217,9 +207,14 @@ if __name__ == '__main__':
                       
                       pxx=np.mean(pxx,axis=0)
 
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_power_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5' % (v,iampa, inmda, igaba, iinp,itr,v) ), 'w')
-                      hf.create_dataset('pxx', data=pxx)
-                      hf.create_dataset('fxx', data=fxx)
-                      hf.close()
+                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
+                      hf.create_dataset('sttc_all', data=sttc_all)
+                      hf.create_dataset('sttcE', data=sttcE)
+                      hf.create_dataset('sttcI', data=sttcI)
+                      hf.create_dataset('frE', data=frE)
+                      hf.create_dataset('frI', data=frI)  
+                      hf.create_dataset('pxx', data=pxx)    
+                      hf.create_dataset('fxx', data=fxx)                
+                      hf.close() 
 
 
