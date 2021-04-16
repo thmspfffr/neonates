@@ -157,8 +157,8 @@ if __name__ == '__main__':
                           spikes[ineuron+320] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
                           frI[ineuron] = spikes[ineuron+320].shape[0]
 
-                      frE=np.mean(frE)/10
-                      frI=np.mean(frI)/10
+                      frE=np.mean(frE)/int(runtime)
+                      frI=np.mean(frI)/int(runtime)
 
                       print('FR_E = %.3f - FR_I = %.3f' % (frE, frI))
 
@@ -189,7 +189,6 @@ if __name__ == '__main__':
                       for ilag in range(0,len(lags)): 
                           print('Computing STTC for Lag %d ms' % lags[ilag]) 
                           for ineuron in range(0,len(spikes)):
-                              print('%d' % ineuron) 
                               for jneuron in range(0,len(spikes)):
                                   sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
       
