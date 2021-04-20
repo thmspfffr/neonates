@@ -51,7 +51,7 @@ if __name__ == '__main__':
     #AMPA_mods   = np.linspace(0.2,5,31)
     #NMDA_mods   = np.linspace(0.8,1.2,3)
     #GABA_mods   = np.linspace(1.2,5,41)
-    runtime     = 5000.0 * ms 
+    runtime     = 2500.0 * ms 
     AMPA_mods   = np.linspace(0.2,5,4.8/0.2+1)
     NMDA_mods   = np.linspace(1,1,0/0.1+1)
     GABA_mods   = np.linspace(0.2,5,4.8/0.2+1)
@@ -168,12 +168,13 @@ if __name__ == '__main__':
                       # OMIT RUNS WHERE FIRING RATES ARE TOO HIGH 
                       # (not plausible and STTC computation too costly)
                       
-                      if frE > 5 or frI > 10:
-                          sttcE = np.zeros([1, 2])*np.nan
-                          sttcI = np.zeros([1, 2])*np.nan
-                          sttc_all = np.zeros([1, 2])*np.nan
-                          pxx  = np.zeros([1, 129])*np.nan
-                          fxx  = np.zeros([1, 129])*np.nan
+                      lags = np.array([0.1])
+                      if frE > 2 or frI > 7:
+                          sttcE = np.zeros([1, lags.shape[0]])*np.nan
+                          sttcI = np.zeros([1, lags.shape[0]])*np.nan
+                          sttc_all = np.zeros([1, lags.shape[0]])*np.nan
+                          pxx  = np.zeros([1, 126])*np.nan
+                          fxx  = np.zeros([1, 126])*np.nan
 
                           hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
                           hf.create_dataset('sttc_all', data=sttc_all)
@@ -186,12 +187,11 @@ if __name__ == '__main__':
                           hf.close() 
 
                           continue
-          
-                      lags = np.array([0.1, 1])
+                              
                       sttc = np.zeros([len(spikes),len(spikes),len(lags)])
-                      for ilag in range(0,len(lags)): 
-                          print('Computing STTC for Lag %d ms' % lags[ilag]) 
+                      for ilag in range(0,len(lags)):      
                           for ineuron in range(0,len(spikes)):
+                              print('Computing STTC for Lag %d ms, Neuron %d' % (lags[ilag],ineuron)) 
                               for jneuron in range(0,len(spikes)):
                                   sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
       
@@ -201,7 +201,7 @@ if __name__ == '__main__':
  
                       print("Computing power spectra ...")
                       
-                      pxx = np.zeros([400,129])
+                      pxx = np.zeros([400,126])
                       for ineuron in range(0,len(Sp_E.spiketimes)):
                           fxx, pxx[ineuron] = signal.welch(Vm_E.values[ineuron],100,window='hann')
                       for ineuron in range(0,80):
