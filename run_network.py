@@ -47,11 +47,14 @@ if __name__ == '__main__':
     #------------------------------------------------------------------------------ 
     v = 2
     # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.1,0.7,5)
-    AMPA_mods   = np.linspace(0.6,8,60)
-    NMDA_mods   = np.linspace(0.8,1.2,3)
-    GABA_mods   = np.linspace(0.2,4,41)
-    runtime     = 20000.0 * ms 
+    inputs      = np.linspace(0.9,1.2,5)
+    #AMPA_mods   = np.linspace(0.2,5,31)
+    #NMDA_mods   = np.linspace(0.8,1.2,3)
+    #GABA_mods   = np.linspace(1.2,5,41)
+    runtime     = 5000.0 * ms 
+    AMPA_mods   = np.linspace(0.2,5,4.8/0.2+1)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(0.2,5,4.8/0.2+1)
     #------------------------------------------------------------------------------ 
     # VERSION 3: Simulate within plausible parameter range
     #------------------------------------------------------------------------------ 
@@ -165,10 +168,10 @@ if __name__ == '__main__':
                       # OMIT RUNS WHERE FIRING RATES ARE TOO HIGH 
                       # (not plausible and STTC computation too costly)
                       
-                      if frE > 2 or frI > 2:
-                          sttcE = np.zeros([1, 3])*np.nan
-                          sttcI = np.zeros([1, 3])*np.nan
-                          sttc_all = np.zeros([1, 3])*np.nan
+                      if frE > 5 or frI > 10:
+                          sttcE = np.zeros([1, 2])*np.nan
+                          sttcI = np.zeros([1, 2])*np.nan
+                          sttc_all = np.zeros([1, 2])*np.nan
                           pxx  = np.zeros([1, 129])*np.nan
                           fxx  = np.zeros([1, 129])*np.nan
 
@@ -184,7 +187,7 @@ if __name__ == '__main__':
 
                           continue
           
-                      lags = np.array([0.01, 0.1, 1])
+                      lags = np.array([0.1, 1])
                       sttc = np.zeros([len(spikes),len(spikes),len(lags)])
                       for ilag in range(0,len(lags)): 
                           print('Computing STTC for Lag %d ms' % lags[ilag]) 
