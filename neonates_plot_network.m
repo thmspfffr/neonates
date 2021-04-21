@@ -6,7 +6,7 @@ clear tmp1 tmp2
 bg = 0
 inmda = 0;
 %%
-v=5
+v=3
 clear outp frE frI sttcE pxx slp
 
 % inputs      = np.linspace(0.7,1.1,3)
@@ -22,7 +22,7 @@ for iinp = 0
 for iampa = 0:20
   iampa
   for inmda=0
-    for igaba = 0
+    for igaba = 0:45
       for itr = 0
   
    
@@ -63,13 +63,28 @@ end
 
 %% PLOT FR for INT AND PYR
 
+ inputs      = np.linspace(0.7,1.1,3)
+AMPA_mods   = np.linspace(2,6,41)
+NMDA_mods   = np.linspace(1,1,0/0.1+1)
+GABA_mods   = np.linspace(0.7,4.8,42)
 
 figure_w;
 
-subplot(4,2,1)
-imagesc(squeeze(sttcE(frI(:,:,:,:,2)),[0 10]))
-subplot(4,2,1)
+subplot(2,2,1)
+imagesc(squeeze(frE),[0 2]); axis square; colorbar
+set(gca,'xtick',log10(freqoi(1:4:end)),'xticklabel',freqoi(1:4:end))
 
+colormap(plasma)
+
+subplot(2,2,2)
+imagesc(squeeze(frI),[0 5]); axis square; colorbar
+colormap(plasma)
+
+subplot(2,2,3)
+imagesc(squeeze(frE<1),[0 2]); axis square; colorbar
+
+subplot(2,2,4)
+imagesc(squeeze(frI<2),[0 2]); axis square; colorbar
 
 
 %%
