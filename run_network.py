@@ -45,25 +45,44 @@ if __name__ == '__main__':
     #------------------------------------------------------------------------------ 
     # VERSION 2: Simulate within plausible parameter range
     #------------------------------------------------------------------------------ 
-    v = 2
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.9,1.3,3)
-    AMPA_mods   = np.linspace(0.2,5,21)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(2,6,26)
-    runtime     = 5000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 3: Simulate within plausible parameter range
-    #------------------------------------------------------------------------------ 
-    #v = 3
+    #v = 2
     # Inputs: stimululus, AMPA, NMDA, GABA
     #inputs      = np.linspace(0.9,1.3,3)
     #AMPA_mods   = np.linspace(0.2,5,21)
     #NMDA_mods   = np.linspace(1,1,0/0.1+1)
     #GABA_mods   = np.linspace(2,6,26)
-    #runtime     = 100000.0 * ms 
+    #runtime     = 5000.0 * ms 
     #------------------------------------------------------------------------------ 
-    # preallocate
+    # VERSION 3: Same as v2, but double twice the time (and only two inputs)
+    #------------------------------------------------------------------------------ 
+    v = 3
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    inputs      = np.linspace(0.9,0.95,1)
+    AMPA_mods   = np.linspace(0.2,5,21)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(2,10,51)
+    runtime     = 20000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 4: Same as v3, but double twice the time (and only two inputs)
+    #------------------------------------------------------------------------------ 
+    v = 4
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    inputs      = np.linspace(0.9,0.95,1)
+    AMPA_mods   = np.linspace(0.2,5,21)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(2,6,26)
+    runtime     = 20000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 5: Same as v3, but with STTC for inh
+    #------------------------------------------------------------------------------ 
+    v = 5
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    inputs      = np.linspace(0.9,0.95,1)
+    AMPA_mods   = np.linspace(0.2,5,21)
+    NMDA_mods   = np.linspace(1,1,0/0.1+1)
+    GABA_mods   = np.linspace(2,6,26)
+    runtime     = 20000.0 * ms 
+    #------------------------------------------------------------------------------ 
 
     if not(os.path.exists('/home/tpfeffer/neonates/proc/v%d' %v)):
         os.makedirs('/home/tpfeffer/neonates/proc/v%d' %v)
@@ -179,13 +198,13 @@ if __name__ == '__main__':
                       lags = np.array([0.1])
                       if frE > 3 or frI > 10:
                           sttcE = np.zeros([1, lags.shape[0]])*np.nan
-                          #sttcI = np.zeros([1, lags.shape[0]])*np.nan
-                          #sttc_all = np.zeros([1, lags.shape[0]])*np.nan
+                          sttcI = np.zeros([1, lags.shape[0]])*np.nan
+                          sttc_all = np.zeros([1, lags.shape[0]])*np.nan
 
                           hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                          #hf.create_dataset('sttc_all', data=sttc_all)
+                          hf.create_dataset('sttc_all', data=sttc_all)
                           hf.create_dataset('sttcE', data=sttcE)
-                          #hf.create_dataset('sttcI', data=sttcI)
+                          hf.create_dataset('sttcI', data=sttcI)
                           hf.create_dataset('frE', data=frE)
                           hf.create_dataset('frI', data=frI)
                           hf.create_dataset('pxx', data=pxx)
@@ -196,19 +215,19 @@ if __name__ == '__main__':
                               
                       sttc = np.zeros([len(spikes),len(spikes),len(lags)])
                       for ilag in range(0,len(lags)):      
-                          for ineuron in range(0,len(popE)):
+                          for ineuron in range(0,len(popE)+len(popI)):
                               print('Computing STTC for Lag %d ms, Neuron %d' % (lags[ilag],ineuron)) 
-                              for jneuron in range(0,len(popE)):
+                              for jneuron in range(0,len(popE)+len(popI)):
                                   sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
 
                       sttcE = sttc[0:320,0:320,:].mean(axis=1).mean(axis=0)
-                      #sttcI = sttc[320:400,320:400,:].mean(axis=1).mean(axis=0)
-                      #sttc_all = sttc.mean(axis=1).mean(axis=0)
+                      sttcI = sttc[320:400,320:400,:].mean(axis=1).mean(axis=0)
+                      sttc_all = sttc.mean(axis=1).mean(axis=0)
 
                       hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      #hf.create_dataset('sttc_all', data=sttc_all)
+                      hf.create_dataset('sttc_all', data=sttc_all)
                       hf.create_dataset('sttcE', data=sttcE)
-                      #hf.create_dataset('sttcI', data=sttcI)
+                      hf.create_dataset('sttcI', data=sttcI)
                       hf.create_dataset('frE', data=frE)
                       hf.create_dataset('frI', data=frI)  
                       hf.create_dataset('pxx', data=pxx)    

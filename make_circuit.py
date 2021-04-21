@@ -30,7 +30,7 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     gEI_AMPA = 0.04 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
     gEI_NMDA = 0.13 * nS                         # Weight of excitatory to inhibitory synapses (NMDA)
     gIE_GABA = 1.99 * GABA_mod * nS              # Weight of inhibitory to excitatory synapses (GABA)
-    gII_GABA = 1.0 * nS                          # Weight of inhibitory to inhibitory synapses (GABA)
+    gII_GABA = 1.0 * nS               # Weight of inhibitory to inhibitory synapses (GABA)
     d = 0.5 * ms                                 # Transmission delay of recurrent excitatory and inhibitory connections
                                                 
     # Connectivity - external connections
