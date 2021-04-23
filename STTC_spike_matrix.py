@@ -1,32 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr 23 12:46:10 2021
-
-@author: mchini
-"""
-
-
-# -*- coding: utf-8 -*-
-"""
 Created on Fri Apr 23 11:34:02 2021
-
-@author: mchini
-"""
-
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 23 10:54:30 2021
 
 @author: mchini
 """
 
 #%% load basic packages
     
-from scipy.io import loadmat
 import numpy as np
 from numba import jit
-import time
 
 #%% define elephant STTC
 
@@ -98,7 +80,7 @@ def run_T(spiketrain, len_rec):
     T = time_A / len_rec
     return T
     
-@jit(nopython=True, parallel=True)
+@jit(forceobj=True, parallel=True)
 def matrix_spike_time_tiling_coefficient(spike_matrix):
     """
     Calculates the Spike Time Tiling Coefficient (STTC) for an entire spike
@@ -115,10 +97,10 @@ def matrix_spike_time_tiling_coefficient(spike_matrix):
     # loop over spike pairs
     for i in range(num_spike_trains):
         # extract spike times
-        spiketrain_i = np.flatnonzero(spike_matrix[i, :]) / 1000
+        spiketrain_i = np.array(np.nonzero(spike_matrix[i, :])[0]) / 1000
         for j in range(i + 1, num_spike_trains):
             # extract spike times
-            spiketrain_j = np.flatnonzero(spike_matrix[j, :]) / 1000
+            spiketrain_j = np.array(np.nonzero(spike_matrix[i, :])[0]) / 1000
             N1 = len(spiketrain_i)
             N2 = len(spiketrain_j)
         
