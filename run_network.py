@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # Inputs: stimululus, AMPA, NMDA, GABA
     inputs      = np.linspace(0.7,0.9,2)
     AMPA_mods   = np.linspace(2,6,41)
-    NMDA_mods   = np.linspace(1,1.2,2)
+    NMDA_mods   = np.linspace(1,1.4,3)
     GABA_mods   = np.linspace(0.7,8.9,83)
     runtime     = 60000.0 * ms 
     #------------------------------------------------------------------------------ 
