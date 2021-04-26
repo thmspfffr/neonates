@@ -71,44 +71,50 @@ end
 iinp = 1;
 inmda = 2;
 
-AMPA_mods   = linspace(0.2,5,21);
-GABA_mods   = linspace(2,10,51);
+AMPA_mods   = linspace(2,6,41);
+GABA_mods   = linspace(0.7,8.9,83);
 
 figure_w;
 
 subplot(2,2,1)
 imagesc(squeeze(frE(:,:,iinp,inmda)),[0 10]); axis square; colorbar
-set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
-set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
+set(gca,'xtick',1:10:length(GABA_mods),'xticklabel',GABA_mods(1:10:end))
+set(gca,'ydir','normal','ytick',1:5:length(AMPA_mods),'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
 tp_editplots;
 colormap(plasma)
 
 subplot(2,2,2)
 imagesc(squeeze(frI(:,:,iinp,inmda)),[0 10]); axis square; colorbar
-set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
-set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
+set(gca,'xtick',1:10:length(GABA_mods),'xticklabel',GABA_mods(1:10:end))
+set(gca,'ydir','normal','ytick',1:5:length(AMPA_mods),'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
 tp_editplots;
 colormap(plasma)
 
 subplot(2,2,3)
 imagesc(squeeze(stc(:,:,iinp,inmda)),[0 1]); axis square; colorbar
-set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
-set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
+set(gca,'xtick',1:10:length(GABA_mods),'xticklabel',GABA_mods(1:10:end))
+set(gca,'ydir','normal','ytick',1:5:length(AMPA_mods),'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
 tp_editplots;
 colormap(plasma)
 
 subplot(2,2,4)
 imagesc(squeeze(slp(:,:,iinp,inmda)),[-1.5 0]); axis square; colorbar
-set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
-set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
+set(gca,'xtick',1:10:length(GABA_mods),'xticklabel',GABA_mods(1:10:end))
+set(gca,'ydir','normal','ytick',1:5:length(AMPA_mods),'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
 tp_editplots;
 colormap(plasma)
 
-print(gcf,'-dpdf',sprintf('~/neonates/plots/neonates_network_inp%d_inmda%d_v%d.pdf'))
+print(gcf,'-dpdf',sprintf('~/neonates/plots/neonates_network_inp%d_inmda%d_v%d.pdf',iinp,inmda,v))
+
+% plot(slp(1:7:end,:,iinp,inmda)')
+% plot(stc(1:7:end,:,iinp,inmda)')
+% plot(stc(1:7:end,:,iinp,inmda)')
+
+
 %%
 v = 1;
 

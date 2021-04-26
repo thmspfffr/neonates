@@ -18,11 +18,11 @@ mask = logical(tril(ones(400,400),-1));
 % outp.spikesI = zeros(80,30000,21,22,'uint8');
 % outp.r =  zeros(19,22,3);
 % outp.fr =  zeros(19,22,3);
-for iinp = 0
+for iinp = 0:1
 for iampa = 0:40
   iampa
-  for inmda=0
-    for igaba = 0:70
+  for inmda=0:1
+    for igaba = 0:82
       for itr = 0
   
    
@@ -32,8 +32,8 @@ for iampa = 0:40
         frI(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/frI');
 %         outp.sttc(:,inmda+1,iampa+1,igaba+1,iinp+1)=nanmean(nanmean(sttc,2),3);
 %         sttcE(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
-tmp = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
-stc(iampa+1,igaba+1,iinp+1,inmda+1) = nanmean(tmp(mask));
+stc(iampa+1,igaba+1,iinp+1,inmda+1) = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
+
         pxx  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/pxx');
                 
         fxx  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/fxx');
@@ -45,7 +45,7 @@ stc(iampa+1,igaba+1,iinp+1,inmda+1) = nanmean(tmp(mask));
             Y = log10(pxx);
             tmp = X\Y; 
             
-            tmp(1)+tmp(2)*log10f
+          slp_err(iampa+1,igaba+1,iinp+1,inmda+1) = sum((log10(pxx)-(tmp(1)+tmp(2)*log10(fxx))).^2);
             
           slp(iampa+1,igaba+1,iinp+1,inmda+1) = tmp(2);
 
@@ -67,13 +67,17 @@ end
 
 
 %% PLOT FR for INT AND PYR    
+
+iinp = 1;
+inmda = 2;
+
 AMPA_mods   = linspace(0.2,5,21);
 GABA_mods   = linspace(2,10,51);
 
 figure_w;
 
 subplot(2,2,1)
-imagesc(squeeze(frE),[0 2]); axis square; colorbar
+imagesc(squeeze(frE(:,:,iinp,inmda)),[0 10]); axis square; colorbar
 set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
 set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
@@ -81,7 +85,7 @@ tp_editplots;
 colormap(plasma)
 
 subplot(2,2,2)
-imagesc(squeeze(frI),[0 5]); axis square; colorbar
+imagesc(squeeze(frI(:,:,iinp,inmda)),[0 10]); axis square; colorbar
 set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
 set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
@@ -89,7 +93,7 @@ tp_editplots;
 colormap(plasma)
 
 subplot(2,2,3)
-imagesc(squeeze(sttcE),[0 0.2]); axis square; colorbar
+imagesc(squeeze(stc(:,:,iinp,inmda)),[0 1]); axis square; colorbar
 set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
 set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
@@ -97,14 +101,18 @@ tp_editplots;
 colormap(plasma)
 
 subplot(2,2,4)
-imagesc(squeeze(slp),[-1 -0.7]); axis square; colorbar
+imagesc(squeeze(slp(:,:,iinp,inmda)),[-1.5 0]); axis square; colorbar
 set(gca,'xtick',1:10:51,'xticklabel',GABA_mods(1:10:end))
 set(gca,'ydir','normal','ytick',1:5:21,'yticklabel',AMPA_mods(1:5:end))
 xlabel('GABA'); ylabel('AMPA')
 tp_editplots;
 colormap(plasma)
 
-print(gcf,'-dpdf',sprintf('~/neonates/plots/neonates_network.pdf'))
+print(gcf,'-dpdf',sprintf('~/neonates/plots/neonates_network_inp%d_inmda%d_v%d.pdf',iinp,inmda,v))
+
+plot(slp(:,:,iinp,inmda))
+
+
 %%
 v = 1;
 

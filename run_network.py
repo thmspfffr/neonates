@@ -39,8 +39,8 @@ if __name__ == '__main__':
     # Inputs: stimululus, AMPA, NMDA, GABA
     inputs      = np.linspace(0.7,0.9,2)
     AMPA_mods   = np.linspace(2,6,41)
-    NMDA_mods   = np.linspace(1,1.4,3)
-    GABA_mods   = np.linspace(0.7,8.9,83)
+    NMDA_mods   = np.linspace(1,1.2,2)
+    GABA_mods   = np.linspace(0.7,6.2,56)
     runtime     = 60000.0 * ms 
     #------------------------------------------------------------------------------ 
     # VERSION 2: Simulate within plausible parameter range
@@ -140,25 +140,21 @@ if __name__ == '__main__':
                       # record voltage
                       Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
                       Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
+                      # record exc. & inh. currents at E
+                      gE = StateMonitor(popE, 'gea', record=True, clock=voltage_clock)
+                      gI = StateMonitor(popE, 'gi', record=True, clock=voltage_clock)
 
                       #------------------------------------------------------------------------------
                       # Run the simulation
                       #------------------------------------------------------------------------------
                       print("Running simulation...")
-                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I)
+                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I, gE, gI)
                       net.prepare()
                       net.run(runtime) 
-
  
                       print("Computing power spectra ...")
-
-                      pxx = np.zeros([400,129])
-                      for ineuron in range(0,len(Sp_E.spiketimes)):
-                          fxx, pxx[ineuron] = signal.welch(Vm_E.values[ineuron],100,window='hann')
-                      for ineuron in range(0,80):
-                          fxx, pxx[ineuron+320] = signal.welch(Vm_I.values[ineuron],100,window='hann')
-
-                      pxx=np.mean(pxx,axis=0)
+                      LFP = np.abs(np.concatenate([gE.values,gI.values])).mean(axis=0)
+                      fxx, pxx = signal.welch(LFP,100,window='hann')
 
                       # convert to array and save output has .h5            
                       spt_E = []; spt_E_idx = []
@@ -186,7 +182,6 @@ if __name__ == '__main__':
                       for ineuron in range(0,80):
                           spikes[ineuron+320] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
                           frI[ineuron] = spikes[ineuron+320].shape[0]
-
 
                       frE=np.mean(frE)/int(runtime)
                       frI=np.mean(frI)/int(runtime)
@@ -245,7 +240,8 @@ if __name__ == '__main__':
                       hf.create_dataset('frE', data=frE)
                       hf.create_dataset('frI', data=frI)  
                       hf.create_dataset('pxx', data=pxx)    
-                      hf.create_dataset('fxx', data=fxx)                
+                      hf.create_dataset('fxx', data=fxx) 
+                      hf.create_dataset('LFP', data=LFP)                     
                       hf.close() 
 
 
