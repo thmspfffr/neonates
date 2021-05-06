@@ -9,114 +9,123 @@ Based on code from Wimmer et al. (2014), initial parameters from Wang (2002).
 Last change: 29th of May 2020, loop across trials; input not through naka-rushton
 '''
 
-from brian import *
+from brian2 import *
 import numpy as np
 import numpy.matlib as ml
 from numpy.random import rand as rand
-from numpy.random import randn as randn
 import h5py
 import os.path
 from subprocess import call
-from sys import platform
 import elephant
 from neo.core import SpikeTrain
 from elephant.conversion import BinnedSpikeTrain
 import quantities as pq
 from scipy import signal
+from scipy.io import savemat
 
-root_dir = '/home/tpfeffer/neonates/'
+
+root_dir = 'D:/models_neonates/results/'
+
+#%% constants
+
+N = 100                                      # Total number of neurons
+f_inh = 0.20                                 # Fraction of inhibitory neurons
+NE = int(N * (1.0 - f_inh))                  # Number of excitatory neurons (320)
+NI = int(N * f_inh)                          # Number of inhibitory neurons (80)
+
+gII_GABA = 1.0 * nS                          # Weight of inhibitory to inhibitory synapses (GABA)
+d = 0.5 * ms                                 # Transmission delay of recurrent excitatory and inhibitory connections
+
+# Connectivity - external connections
+gextE = 2.5 * nS                             # Weight of external input to excitatory neurons: Increased from previous value
+gextI = 1.62 * nS                            # Weight of external input to inhibitory neurons
+  
+# Neuron model
+CmE = 0.5 * nF                               # Membrane capacitance of excitatory neurons
+CmI = 0.2 * nF                               # Membrane capacitance of inhibitory neurons
+gLeakE = 25.0 * nS                           # Leak conductance of excitatory neurons
+gLeakI = 20.0 * nS                           # Leak conductance of inhibitory neurons
+Vl = -70.0 * mV                              # Resting potential
+Vt = -50.0 * mV                              # Spiking threshold
+Vr = -55.0 * mV                              # Reset potential
+tau_refE = 2.0 * ms                          # Absolute refractory period of excitatory neurons
+tau_refI = 1.0 * ms                          # Absolute refractory period of inhibitory neurons
+  
+# Synapse model
+VrevE = 0 * mV                               # Reversal potential of excitatory synapses
+VrevI = -70 * mV                             # Reversal potential of inhibitory synapses
+tau_AMPA = 2.0 * ms                          # Decay constant of AMPA-type conductances
+tau_GABA = 5.0 * ms                          # Decay constant of GABA-type conductances
+tau_NMDA_decay = 100.0 * ms                  # Decay constant of NMDA-type conductances
+tau_NMDA_rise = 2.0 * ms                     # Rise constant of NMDA-type conductances
+alpha_NMDA = 0.5 * kHz                       # Saturation constant of NMDA-type conductances
+
+# Connectivity - local recurrent connections
+gEI_AMPA = 0.04 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
+gEI_NMDA = 0.13 * nS                         # Weight of excitatory to inhibitory synapses (NMDA)
+
+#%% get spike matrix function
+
+def get_spike_matrix(spike_monitor, num_neurons, len_stim):
+    # initialize
+    spike_matrix = zeros((num_neurons, len_stim + 1), dtype=bool)
+    # loop over neurons that fired at least once
+    for neuron_idx in unique(spike_monitor.i):
+        # extract spike_times (in seconds)
+        spike_times = spike_monitor.t[spike_monitor.i == neuron_idx]
+        # convert them to milliseconds
+        spike_times = round_(asarray(spike_times) * 1000).astype(int)
+        spike_matrix[neuron_idx, spike_times] = 1
+    return spike_matrix
+
+#%% run shit 
 
 from make_circuit import make_circuit
 # Version
-ntrls = 1;
+ntrls = 1
+
 
 if __name__ == '__main__':
-    
-    #------------------------------------------------------------------------------ 
-    # VERSION 1: Find plausible parameter range (coarse)
-    #------------------------------------------------------------------------------ 
-    v = 1
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    #inputs      = np.linspace(0.7,1.1,3)
-    #AMPA_mods   = np.linspace(2,6,41)
-    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    #GABA_mods   = np.linspace(0.7,4.8,42)
-    #runtime     = 30000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 2: Simulate within plausible parameter range
-    #------------------------------------------------------------------------------ 
-    #v = 2
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    #inputs      = np.linspace(0.9,1.3,3)
-    #AMPA_mods   = np.linspace(0.2,5,21)
-    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    #GABA_mods   = np.linspace(2,6,26)
-    #runtime     = 5000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 3: Same as v2, but double twice the time (and only two inputs)
     #------------------------------------------------------------------------------ 
     v = 3
     # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.9,0.95,1)
-    AMPA_mods   = np.linspace(0.2,5,21)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(2,10,51)
-    runtime     = 20000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 4: Same as v3, but double twice the time (and only two inputs)
-    #------------------------------------------------------------------------------ 
-    v = 4
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.9,0.95,1)
-    AMPA_mods   = np.linspace(0.2,5,21)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(2,6,26)
-    runtime     = 20000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 5: Same as v3, but with STTC for inh
-    #------------------------------------------------------------------------------ 
-    v = 5
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    inputs      = np.linspace(0.9,0.95,1)
-    AMPA_mods   = np.linspace(0.2,5,21)
-    NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    GABA_mods   = np.linspace(2,6,26)
-    runtime     = 20000.0 * ms 
-    #------------------------------------------------------------------------------ 
+    inputs      = np.linspace(0.7,0.9,2)
+    AMPA_mods   = np.linspace(3,5,5)
+    NMDA_mods   = np.linspace(1.1,1.2,2)
+    GABA_mods   = np.linspace(1,3,6)
+    runtime     = 60000.0 * ms 
 
-    if not(os.path.exists('/home/tpfeffer/neonates/proc/v%d' %v)):
-        os.makedirs('/home/tpfeffer/neonates/proc/v%d' %v)
+    if not(os.path.exists(root_dir + str(v))):
+        os.makedirs(root_dir + str(v))
 
-    defaultclock = Clock(dt=0.1*ms,t=0*ms,order=0,makedefaultclock=True) # use different clock to change sampling rate
-    voltage_clock = EventClock(dt=10*ms,t=0*ms,order=1,makedefaultclock=False) # use different clock to change sampling rate
+    defaultclock = Clock(dt=0.1*ms) # use different clock to change sampling rate
+    voltage_clock = Clock(dt=10*ms) # use different clock to change sampling rate
 
     #------------------------------------------------------------------------------ 
     # Run simulation
     #------------------------------------------------------------------------------ 
     for itr in range(ntrls):
       # Loop through exp parameters
-      for igaba in range(0,GABA_mods.size): 
-          for iinp in range(0,inputs.size):
-              for iampa in range(0,AMPA_mods.size):
-                  for inmda in range(0,NMDA_mods.size):
-
-                      fn = os.path.expanduser(root_dir + 'proc/v%d/neonates_network_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d_processing.txt') % (v,iampa, inmda, igaba, iinp,itr,v)
-                      if os.path.isfile(fn)==False:
-                          call(['touch', fn])
-                      else:
-                          continue
-                      #  initialize 
-                      defaultclock.reinit()
-                      voltage_clock.reinit()
-                      clear(True) 
-
-                      print("Computing INPUT%d, GABA%d, AMPA%d, trial%d ...") % (iinp, igaba,iampa,itr)
-
-                      inp = inputs[iinp]
-                      AMPA_mod = AMPA_mods[iampa]
-                      NMDA_mod = NMDA_mods[inmda]
-                      GABA_mod = GABA_mods[igaba]
+      for igaba, GABA_mod in enumerate(GABA_mods): 
+          for iinp, inp in enumerate(inputs):
+              for iampa, AMPA_mod in enumerate(AMPA_mods):
+                  for inmda, NMDA_mod in enumerate(NMDA_mods):
                       
+                      # Connectivity - local recurrent connections
+                      gEE_AMPA = 0.05 * AMPA_mod * nS		         # Weight of AMPA synapses between excitatory neurons
+                      gEE_NMDA = 0.165 * NMDA_mod * nS             # Weight of NMDA synapses between excitatory neurons
+                      gEI_AMPA = 0.04 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
+                      gEI_NMDA = 0.13 * nS                         # Weight of excitatory to inhibitory synapses (NMDA)
+                      gIE_GABA = 1.99 * GABA_mod * nS              # Weight of inhibitory to excitatory synapses (GABA)
+                        
+                      # Inputs
+                      nu_ext_exc = inp * 2000 * Hz                       # Firing rate of external Poisson input to excitatory neurons
+                      nu_ext_inh = inp * 2000 * Hz                       # Firing rate of external Poisson input to inhibitory neurons
+                      stim_ext = 0 * Hz
+
+                      print('Computing input ' + str(itr) + ' GABA ' + str(igaba) + 
+                            ' AMPA ' + str(iampa) + ' NMDA ' + str(inmda)) 
+
                       Dgroups, Dconnections, Dnetfunctions, subgroups = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
 
                       # get populations from the integrations circuit
@@ -133,105 +142,37 @@ if __name__ == '__main__':
                       Sp_E = SpikeMonitor(popE, record=True)
                       # record spikes of inhibitory neurons
                       Sp_I = SpikeMonitor(popI, record=True)
-                      # record instantaneous excitatory populations activity
-                      R_E = PopulationRateMonitor(popE, bin=5*ms)
-                      # record instantaneous inhibitory populations activity
-                      R_I = PopulationRateMonitor(popI, bin=5*ms)
                       # record voltage
                       Vm_E = StateMonitor(popE, 'V', record=True, clock=voltage_clock)
                       Vm_I = StateMonitor(popI, 'V', record=True, clock=voltage_clock)
+                      # record exc. & inh. currents at E
+                      gE = StateMonitor(popE, 'gea', record=True, clock=voltage_clock)
+                      gI = StateMonitor(popE, 'gi', record=True, clock=voltage_clock)
 
                       #------------------------------------------------------------------------------
                       # Run the simulation
                       #------------------------------------------------------------------------------
                       print("Running simulation...")
-                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I)
-                      net.prepare()
+                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, Sp_E, Sp_I, Vm_E, Vm_I, gE, gI)
                       net.run(runtime) 
 
- 
-                      print("Computing power spectra ...")
-
-                      pxx = np.zeros([400,129])
-                      for ineuron in range(0,len(Sp_E.spiketimes)):
-                          fxx, pxx[ineuron] = signal.welch(Vm_E.values[ineuron],100,window='hann')
-                      for ineuron in range(0,80):
-                          fxx, pxx[ineuron+320] = signal.welch(Vm_I.values[ineuron],100,window='hann')
-
-                      pxx=np.mean(pxx,axis=0)
-
-                      # convert to array and save output has .h5            
-                      spt_E = []; spt_E_idx = []
-                      spt_I = []; spt_I_idx = []
-
-                      for ineuron in range(0,len(Sp_E.spiketimes)):
-                          spt_E = np.append(spt_E,Sp_E.spiketimes.values()[ineuron], axis=None)
-                          spt_E_idx = np.append(spt_E_idx,ml.repmat(ineuron,1,len(Sp_E.spiketimes.values()[ineuron])), axis=None)
-
-                      for ineuron in range(0,len(Sp_I.spiketimes)):
-                          spt_I = np.append(spt_I,Sp_I.spiketimes.values()[ineuron], axis=None)
-                          spt_I_idx = np.append(spt_I_idx,ml.repmat(ineuron,1,len(Sp_I.spiketimes.values()[ineuron])), axis=None)
-
-                      spt_E = np.vstack((spt_E,spt_E_idx))
-                      spt_I = np.vstack((spt_I,spt_I_idx))
-
-                      # COMPUTE SPIKE COUNT CORRELATIONS
-                      # -------------------------------------------
-                      spikes = dict(); spikesI = dict(); frE = np.zeros([320,1]); frI = np.zeros([80,1])
-
-                      first_spike = 0 # start analysis at t = 0
-                      for ineuron in range(0,320):
-                          spikes[ineuron] = SpikeTrain(spt_E[0][(spt_E[1]==ineuron) & (spt_E[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
-                          frE[ineuron] = spikes[ineuron].shape[0]
-                      for ineuron in range(0,80):
-                          spikes[ineuron+320] = SpikeTrain(spt_I[0][(spt_I[1]==ineuron) & (spt_I[0]>first_spike)]*pq.s, t_start = 0, t_stop = runtime)
-                          frI[ineuron] = spikes[ineuron+320].shape[0]
-
-                      frE=np.mean(frE)/int(runtime)
-                      frI=np.mean(frI)/int(runtime)
-
-                      print('FR_E = %.3f - FR_I = %.3f' % (frE, frI))
-
-                      # OMIT RUNS WHERE FIRING RATES ARE TOO HIGH 
-                      # (not plausible and STTC computation too costly)
+                      spike_matrixPYR = get_spike_matrix(Sp_E, NE,
+                                           int(asarray(runtime) * 1000))
+                      spike_matrixIN = get_spike_matrix(Sp_I, NI,
+                                           int(asarray(runtime) * 1000))
                       
-                      lags = np.array([0.1])
-                      if frE > 3 or frI > 10:
-                          sttcE = np.zeros([1, lags.shape[0]])*np.nan
-                          sttcI = np.zeros([1, lags.shape[0]])*np.nan
-                          sttc_all = np.zeros([1, lags.shape[0]])*np.nan
-
-                          hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                          hf.create_dataset('sttc_all', data=sttc_all)
-                          hf.create_dataset('sttcE', data=sttcE)
-                          hf.create_dataset('sttcI', data=sttcI)
-                          hf.create_dataset('frE', data=frE)
-                          hf.create_dataset('frI', data=frI)
-                          hf.create_dataset('pxx', data=pxx)
-                          hf.create_dataset('fxx', data=fxx)
-                          hf.close() 
-
-                          continue
-                              
-                      sttc = np.zeros([len(spikes),len(spikes),len(lags)])
-                      for ilag in range(0,len(lags)):      
-                          for ineuron in range(0,len(popE)+len(popI)):
-                              print('Computing STTC for Lag %d ms, Neuron %d' % (lags[ilag],ineuron)) 
-                              for jneuron in range(0,len(popE)+len(popI)):
-                                  sttc[ineuron,jneuron,ilag]=elephant.spike_train_correlation.sttc(spikes[ineuron],spikes[jneuron],lags[ilag]*pq.s)
-
-                      sttcE = sttc[0:320,0:320,:].mean(axis=1).mean(axis=0)
-                      sttcI = sttc[320:400,320:400,:].mean(axis=1).mean(axis=0)
-                      sttc_all = sttc.mean(axis=1).mean(axis=0)
-
-                      hf = h5py.File(os.path.expanduser(root_dir + 'proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5') % (v,iampa, inmda, igaba, iinp,itr,v), 'w')
-                      hf.create_dataset('sttc_all', data=sttc_all)
-                      hf.create_dataset('sttcE', data=sttcE)
-                      hf.create_dataset('sttcI', data=sttcI)
-                      hf.create_dataset('frE', data=frE)
-                      hf.create_dataset('frI', data=frI)  
-                      hf.create_dataset('pxx', data=pxx)    
-                      hf.create_dataset('fxx', data=fxx)                
-                      hf.close() 
-
+                      # save stuff
+                      dict2save = {}
+                      dict2save['spikes_PYR'] = spike_matrixIN
+                      dict2save['spikes_IN'] = spike_matrixPYR
+                      dict2save['gE'] = gE.gea
+                      dict2save['gI'] = gI.gi
+                      dict2save['voltage_PYR'] = Vm_E.V
+                      dict2save['voltage_IN'] = Vm_I.V
+                      savemat(root_dir + str(itr) + ' GABA ' + str(igaba) + 
+                            ' AMPA ' + str(iampa) + ' NMDA ' + str(inmda)
+                            + '.mat', dict2save)    
+                        
+                      del Sp_E, Sp_I, Vm_E, Vm_I, gE, gI
+                      
 

@@ -1,5 +1,4 @@
-from brian import *
-import numpy
+from brian2 import *
 
 
 def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
@@ -19,8 +18,8 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     # Model parameters for the integration circuit
     # ----------------------------------------------------------------------------------------------- 
     # Populations
-    N = 400                                     # Total number of neurons
-    f_inh = 0.20                                  # Fraction of inhibitory neurons
+    N = 100                                      # Total number of neurons
+    f_inh = 0.20                                 # Fraction of inhibitory neurons
     NE = int(N * (1.0 - f_inh))                  # Number of excitatory neurons (320)
     NI = int(N * f_inh)                          # Number of inhibitory neurons (80)
     
@@ -30,7 +29,7 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     gEI_AMPA = 0.04 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
     gEI_NMDA = 0.13 * nS                         # Weight of excitatory to inhibitory synapses (NMDA)
     gIE_GABA = 1.99 * GABA_mod * nS              # Weight of inhibitory to excitatory synapses (GABA)
-    gII_GABA = 1.0 * nS               # Weight of inhibitory to inhibitory synapses (GABA)
+    gII_GABA = 1.0 * nS                          # Weight of inhibitory to inhibitory synapses (GABA)
     d = 0.5 * ms                                 # Transmission delay of recurrent excitatory and inhibitory connections
                                                 
     # Connectivity - external connections
@@ -53,13 +52,10 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     VrevI = -70 * mV                             # Reversal potential of inhibitory synapses
     tau_AMPA = 2.0 * ms                          # Decay constant of AMPA-type conductances
     tau_GABA = 5.0 * ms                          # Decay constant of GABA-type conductances
-    tau_NMDA_decay = 100.0 * ms                  # Decay constant of NMDA-type conductances
-    tau_NMDA_rise = 2.0 * ms                     # Rise constant of NMDA-type conductances
-    alpha_NMDA = 0.5 * kHz                       # Saturation constant of NMDA-type conductances
 
     # Inputs
-    nu_ext_exc = inp * 2000 * Hz                       # Firing rate of external Poisson input to excitatory neurons
-    nu_ext_inh = inp * 2000 * Hz                       # Firing rate of external Poisson input to inhibitory neurons
+    nu_ext_exc = inp * 20 * Hz                       # Firing rate of external Poisson input to excitatory neurons
+    nu_ext_inh = inp * 20 * Hz                       # Firing rate of external Poisson input to inhibitory neurons
     stim_ext = 0 * Hz
 
     # -----------------------------------------------------------------------------------------------
@@ -75,8 +71,8 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     dxpre/dt= -xpre/(tau_NMDA_rise) : 1
     gen : 1
     tau : second
-    I : nA
-    Cm : nF
+    I : amp
+    Cm : farad
     '''
     eqsI = '''
     dV/dt = (-gea*(V-VrevE) - gen*(V-VrevE)/(1.0+exp(-V/mV*0.062)/3.57) - gi*(V-VrevI) - (V-Vl)) / (tau) + I/Cm: volt
@@ -84,13 +80,13 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     dgi/dt = -gi/(tau_GABA) : 1
     gen : 1
     tau : second
-    I : nA
-    Cm : nF
+    I : amp
+    Cm : farad
     '''
 
     # Set up the integration circuit
-    popE = NeuronGroup(NE, model=eqsE, threshold=Vt, reset=Vr, refractory=tau_refE)
-    popI = NeuronGroup(NI, model=eqsI, threshold=Vt, reset=Vr, refractory=tau_refI)
+    popE = NeuronGroup(NE, model=eqsE, threshold='V>Vt', reset='V=Vr', refractory=tau_refE)
+    popI = NeuronGroup(NI, model=eqsI, threshold='V>Vt', reset='V=Vr', refractory=tau_refI)
     popE.tau = CmE / gLeakE
     popI.tau = CmI / gLeakI      
     popE.I = 0.0 * nA
@@ -99,13 +95,20 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     popI.Cm = CmI
     
     # Connections involving AMPA synapses
-    C_DE_DE_AMPA = Connection(popE, popE, 'gea', delay = d)             
-    C_DE_DE_AMPA.connect_full(popE, popE, weight = gEE_AMPA / gLeakE)
-    C_DE_DI_AMPA = Connection(popE, popI, 'gea', weight = gEI_AMPA / gLeakI, delay = d)
-
+    C_DE_DE_AMPA = Synapses(popE, popE, 'w: 1', on_pre='gea += w')
+    C_DE_DE_AMPA.connect(p=0.2)
+    C_DE_DE_AMPA.w = gEE_AMPA / gLeakE; C_DE_DE_AMPA.delay = d
+    
+    C_DE_DI_AMPA = Synapses(popE, popI, 'w: 1', on_pre='gea += w')
+    C_DE_DI_AMPA.connect(p=0.2)
+    C_DE_DI_AMPA.w = gEI_AMPA / gLeakI; C_DE_DI_AMPA.delay=d
+    
     # Connections involving NMDA synapses    
     # Note that due to the all-to-all connectivity, the contribution of NMDA can be calculated efficiently
-    selfnmda = IdentityConnection(popE, popE, 'xpre', weight=1.0, delay = d)    
+    selfnmda = Synapses(popE, popE, 'w: 1', on_pre='xpre += w')
+    selfnmda.connect(p=0.2)
+    selfnmda.w=1; selfnmda.delay=d
+    
     E_nmda = asarray(popE.spre)
     E_gen = asarray(popE.gen) 
     I_gen = asarray(popI.gen)
@@ -118,21 +121,30 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
         I_gen[:] = gEI_NMDA / gLeakI * sE  
     
     # Connections involving GABA synapses
-    C_DI_DE = Connection(popI, popE, 'gi', weight = gIE_GABA / gLeakE, delay = d)
-    C_DI_DI = Connection(popI, popI, 'gi', weight = gII_GABA / gLeakI, delay = d)
+    C_DI_DE = Synapses(popI, popE, 'w: 1', on_pre='gi += w')
+    C_DI_DE.connect(p=0.2)
+    C_DI_DE.w =  gIE_GABA / gLeakE; C_DI_DE.delay=d   
     
+    C_DI_DI = Synapses(popI, popE, 'w: 1', on_pre='gi += w')
+    C_DI_DI.connect(p=0.2)
+    C_DI_DI.w =  gII_GABA / gLeakI; C_DI_DI.delay=d
+
     # External inputs
     extinputE = PoissonGroup(NE, rates = nu_ext_exc) 
     extinputI = PoissonGroup(NI, rates = nu_ext_inh)
    
     # Connect external inputs
-    extconnE = IdentityConnection(extinputE, popE, 'gea', weight = gextE / gLeakE)
-    extconnI = IdentityConnection(extinputI, popI, 'gea', weight = gextI / gLeakI)
+    extconnE = Synapses(extinputE, popE, 'w: 1', on_pre='gea += w')
+    extconnE.connect(p=0.2); extconnE.w = gextE / gLeakE   
+    
+    extconnI = Synapses(extinputI, popI, 'w: 1', on_pre='gea += w')
+    extconnI.connect(p=0.2); extconnI.w = gextI / gLeakI  
 
     # Stimulus input
     stiminput = PoissonGroup(NE, rates = stim_ext) 
     # Connect stimulus inputs
-    stimconn = IdentityConnection(stiminput, popE, 'gea', weight = gextE / gLeakE)
+    stimconn = Synapses(stiminput, popE, 'w: 1', on_pre='gea += w')
+    stimconn.connect(); stimconn.w = gextE / gLeakE
     
     # Return the integration circuit
     groups = {'DE': popE, 'DI': popI, 'DXE': extinputE, 'DXI': extinputI, 'DSE': stiminput}
@@ -143,15 +155,3 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
                    'C_DE_DE_AMPA': C_DE_DE_AMPA, 'C_DE_DI_AMPA': C_DE_DI_AMPA, 'C_DI_DE': C_DI_DE, 'C_DI_DI': C_DI_DI }
                      
     return groups, connections, update_nmda, subgroups
-
-def get_spike_matrix(spike_monitor, num_neurons, len_stim):
-    # initialize
-    spike_matrix = zeros((num_neurons, len_stim + 1), dtype=bool)
-    # loop over neurons that fired at least once
-    for neuron_idx in unique(spike_monitor.spikes):
-        # extract spike_times (in seconds)
-        spike_times = spike_monitor.spiketimes[spike_monitor.spikes == neuron_idx]
-        # convert them to milliseconds
-        spike_times = round_(asarray(spike_times) * 1000).astype(int)
-        spike_matrix[neuron_idx, spike_times] = 1
-    return spike_matrix
