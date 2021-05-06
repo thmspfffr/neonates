@@ -8,6 +8,11 @@ simplified, with more randomness and a different input
 v1 = 1st full attempt
 v2 = changed ext input from 2.7 Hz to 5 Hz
      changed p of connection of ext input from 2 (?!) to 1
+v3 = changed parameter set:
+        - AMPA_mods from np.linspace(0.75,1.5,11) to np.linspace(0.75,3,21)
+        - GABA_mods from np.linspace(0.5,1.2,11) to np.linspace(0.25,1.5,21)
+     extended simulation time from 10 to 60 seconds
+
 """
 
 #%% import package and define functions
@@ -35,7 +40,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'D:/models_neonates/results/'
-v = 2 
+v = 3 
 to_plot = 0
 to_save = 0
 start_dataset = 0
@@ -46,7 +51,7 @@ n_neurons = 100
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-simulation_time = 10 * second
+simulation_time = 60 * second
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
 PYRs2keep = 80
@@ -107,8 +112,8 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.75,1.5,11)
-GABA_mods   = np.linspace(0.5,1.2,11)
+AMPA_mods   = np.linspace(0.75,3,21)
+GABA_mods   = np.linspace(0.25,1.5,21)
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
