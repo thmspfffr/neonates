@@ -8,6 +8,8 @@ simplified, with more randomness and a different input
 v1 = 1st full attempt with IN activation
 v2 = 1st full attempt with IN inhibition
 v3 = IN inhibition - increase current and outside stim
+v4 = decrease outside stim but 5x all conductances
+v5 = as v4 but with opto stim and not inhibition
 """
 
 #%% import package and define functions
@@ -65,7 +67,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/results_opto/'
-v = 3 
+v = 5 
 
 ########### network parameters ###########
 n_neurons = 100
@@ -80,12 +82,12 @@ PYRs2keep = 80
 INs2keep = 20
 
 ########### stable connectivity parameters ###########
-gEE_AMPA = 0.178 * nS		                  # Weight of recurrent AMPA synapses between excitatory neurons
+gEE_AMPA = 0.178 * 5 * nS		                  # Weight of recurrent AMPA synapses between excitatory neurons
 #gEE_AMPA_cor = 0.187 * nS		              # Weight of intra-network AMPA synapses between excitatory neurons
-gEE_AMPA_ext = 0.234 * nS		              # Weight of external AMPA synapses between excitatory neurons
-gEI_AMPA = 0.254 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
-gIE_GABA = 2.01 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
-gII_GABA = 2.7 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
+gEE_AMPA_ext = 0.234 * 5 * nS		              # Weight of external AMPA synapses between excitatory neurons
+gEI_AMPA = 0.254 * 5 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
+gIE_GABA = 2.01 * 5 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
+gII_GABA = 2.7 * 5 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
     
 
 # Connectivity - external connections
@@ -115,7 +117,7 @@ tau_GABA = 8.0 * ms                          # Decay constant of GABA-type condu
 ########### excitatory input parameters ###########
 num_imputs = 100
 epsilonPoisson = 1
-input_factor = 20
+input_factor = 5
 
 ########### ramp parameters ###########
 stim_start = int(3 * 1000 / 0.1)
@@ -123,7 +125,7 @@ stim_end = int(6 * 1000 / 0.1)
 t_end = int(9 * 1000 / 0.1)
 unit_time = 0.1 * ms
 amplitude_start = 0 * pamp
-amplitude_end = - 1 * namp
+amplitude_end = 1 * namp
 
 # Neuron equations
 eqsPYR = '''
