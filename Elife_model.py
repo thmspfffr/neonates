@@ -13,7 +13,7 @@ v3 = changed parameter set:
         - GABA_mods from np.linspace(0.5,1.2,11) to np.linspace(0.25,1.5,21)
      extended simulation time from 10 to 60 seconds
 v4 = changed ext input to 1.5 Hz as in the eLife model
-v5 = introduced different conductance levels for various AMPA connections (ext, recur and not recur)
+v5 = introduced different conductance levels for various AMPA connections (ext, and within network)
      started modulating also the AMPA conductance of the ext input
 """
 
@@ -124,7 +124,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         print('working on AMPA ' + str(iAMPA) + ' GABA ' + str(iGABA))
 
         ########### define neuron groups ###########
-        PYRs = NeuronGroup(nPYRS,
+        PYRs = NeuronGroup(nPYRS, method='euler',
                            model=eqsPYR,
                            threshold = "V > Vthr",  reset = "V = Vrest",
                            refractory=refractoryE)
@@ -132,7 +132,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         PYRs.tau = CmE / gLeakE
         PYRs.sigma = 10 * mV
                             
-        IN = NeuronGroup(nINs,
+        IN = NeuronGroup(nINs, method='euler',
                          model=eqsIN,
                          threshold = "V > Vthr",  reset = "V = Vrest",
                          refractory=refractoryI)

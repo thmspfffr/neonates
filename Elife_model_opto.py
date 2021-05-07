@@ -160,7 +160,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                                 amplitude_end, num_reps)
 
         ########### define neuron groups ###########
-        PYRs = NeuronGroup(nPYRS,
+        PYRs = NeuronGroup(nPYRS, method='euler',
                            model=eqsPYR,
                            threshold = "V > Vthr",  reset = "V = Vrest",
                            refractory=refractoryE)
@@ -168,7 +168,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         PYRs.tau = CmE / gLeakE
         PYRs.sigma = 10 * mV
                             
-        IN = NeuronGroup(nINs,
+        IN = NeuronGroup(nINs, method='euler',
                          model=eqsIN,
                          threshold = "V > Vthr",  reset = "V = Vrest",
                          refractory=refractoryI)
