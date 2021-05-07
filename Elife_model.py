@@ -15,6 +15,8 @@ v3 = changed parameter set:
 v4 = changed ext input to 1.5 Hz as in the eLife model
 v5 = introduced different conductance levels for various AMPA connections (ext, and within network)
      started modulating also the AMPA conductance of the ext input
+v6 = increase 5x both AMPA and GABA conductances
+     increase gI/gE of the parameter space
 """
 
 #%% import package and define functions
@@ -42,7 +44,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/results/'
-v = 5 
+v = 6 
 to_plot = 0
 to_save = 0
 start_dataset = 0
@@ -60,18 +62,14 @@ PYRs2keep = 80
 INs2keep = 20
 
 ########### stable connectivity parameters ###########
-gEE_AMPA = 0.178 * nS		                  # Weight of recurrent AMPA synapses between excitatory neurons
-#gEE_AMPA_cor = 0.187 * nS		              # Weight of intra-network AMPA synapses between excitatory neurons
-gEE_AMPA_ext = 0.234 * nS		              # Weight of external AMPA synapses between excitatory neurons
-gEI_AMPA = 0.254 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
-gIE_GABA = 2.01 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
-gII_GABA = 2.7 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
+gEE_AMPA = 0.178 * 5 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
+#gEE_AMPA_cor = 0.187 * nS		                   # Weight of intra-network AMPA synapses between excitatory neurons
+gEE_AMPA_ext = 0.234 * 5 * nS		               # Weight of external AMPA synapses between excitatory neurons
+gEI_AMPA = 0.254 * 5 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
+gIE_GABA = 2.01 * 5 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
+gII_GABA = 2.7 * 5 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
     
-
-# Connectivity - external connections
-gextE = 0.234 * nS                            # Weight of external input to excitatory neurons: Increased from previous value
-gextI = 0.317 * nS                            # Weight of external input to inhibitory neurons
-    
+   
 # Neuron model
 CmE = 0.5 * nF                               # Membrane capacitance of excitatory neurons
 CmI = 0.2 * nF                               # Membrane capacitance of inhibitory neurons
@@ -116,8 +114,8 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.75,3,21)
-GABA_mods   = np.linspace(0.25,1.5,21)
+AMPA_mods   = np.linspace(0.5,2.5,21)
+GABA_mods   = np.linspace(0.5,2,21)
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):

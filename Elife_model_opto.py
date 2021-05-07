@@ -6,7 +6,8 @@ based on Tom's model, based on Wang's model
 simplified, with more randomness and a different input 
 
 v1 = 1st full attempt with IN activation
-
+v2 = 1st full attempt with IN inhibition
+v3 = IN inhibition - increase current and outside stim
 """
 
 #%% import package and define functions
@@ -64,18 +65,14 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/results_opto/'
-v = 5 
-to_plot = 0
-to_save = 0
-start_dataset = 0
-num_datasets = 1
+v = 3 
 
 ########### network parameters ###########
 n_neurons = 100
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-num_reps = 10
+num_reps = 5
 simulation_time = 9 * second * num_reps
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
@@ -118,7 +115,7 @@ tau_GABA = 8.0 * ms                          # Decay constant of GABA-type condu
 ########### excitatory input parameters ###########
 num_imputs = 100
 epsilonPoisson = 1
-input_factor = 1.5
+input_factor = 20
 
 ########### ramp parameters ###########
 stim_start = int(3 * 1000 / 0.1)
@@ -126,7 +123,7 @@ stim_end = int(6 * 1000 / 0.1)
 t_end = int(9 * 1000 / 0.1)
 unit_time = 0.1 * ms
 amplitude_start = 0 * pamp
-amplitude_end = + 2.5 * namp
+amplitude_end = - 1 * namp
 
 # Neuron equations
 eqsPYR = '''
@@ -148,8 +145,8 @@ Istim = ramp(t) : amp
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.75,3,21)
-GABA_mods   = np.linspace(0.25,1.5,21)
+AMPA_mods   = np.linspace(0.75,1.25,3)
+GABA_mods   = np.linspace(0.75,1.25,3)
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
