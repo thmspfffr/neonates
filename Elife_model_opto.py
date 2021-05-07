@@ -5,16 +5,8 @@ modified version of LIF model
 based on Tom's model, based on Wang's model
 simplified, with more randomness and a different input 
 
-v1 = 1st full attempt
-v2 = changed ext input from 2.7 Hz to 5 Hz
-     changed p of connection of ext input from 2 (?!) to 1
-v3 = changed parameter set:
-        - AMPA_mods from np.linspace(0.75,1.5,11) to np.linspace(0.75,3,21)
-        - GABA_mods from np.linspace(0.5,1.2,11) to np.linspace(0.25,1.5,21)
-     extended simulation time from 10 to 60 seconds
-v4 = changed ext input to 1.5 Hz as in the eLife model
-v5 = introduced different conductance levels for various AMPA connections (ext, recur and not recur)
-     started modulating also the AMPA conductance of the ext input
+v1 = 1st full attempt with IN activation
+
 """
 
 #%% import package and define functions
@@ -24,6 +16,36 @@ from scipy.io import savemat
 from brian2 import *
 
 #%% define function(s)
+
+def get_ramp_current(stim_start, stim_end, t_end, unit_time, amplitude_start, amplitude_end, num_reps):
+    """Creates a ramp current. If stim_start == stim_end, then ALL entries are 0.
+    Args:
+        stim_start (int): start of the ramp
+        stim_end (int): end of the ramp
+        t_end(int): end of the stimulus (can be after end of ramp)
+        unit_time (Brian2 unit): unit of stim_start and stim_end. e.g. 0.1*brian2.ms
+        amplitude_start (Quantity): amplitude of the ramp at stim_start. e.g. 3.5*brian2.uamp
+        amplitude_end (Quantity): amplitude of the ramp at stim_end. e.g. 4.5*brian2.uamp
+        num_reps(int): number of repetitions, in case you want to repeat the same stimulus
+                       multiple times       
+    Returns:
+        TimedArray: Brian2.TimedArray
+    """
+    assert isinstance(stim_start, int), "stim_start_ms must be of type int"
+    assert isinstance(stim_end, int), "stim_end must be of type int"
+    assert units.fundamentalunits.have_same_dimensions(amplitude_start, amp), \
+        "amplitude must have the dimension of current e.g. brian2.uamp"
+    assert units.fundamentalunits.have_same_dimensions(amplitude_end, amp), \
+        "amplitude must have the dimension of current e.g. brian2.uamp"
+    tmp_size = 1 + t_end  # +1 for t=0
+    tmp = np.zeros(tmp_size) * amp
+    if stim_end > stim_start:  # if deltaT is zero, we return a zero current
+        slope = (amplitude_end - amplitude_start) / float((stim_end - stim_start))
+        ramp = [amplitude_start + t * slope for t in range(0, (stim_end - stim_start) + 1)]
+        tmp[stim_start: stim_end + 1] = ramp
+    tmp = tile(tmp, num_reps)
+    curr = TimedArray(tmp, dt=1. * unit_time)
+    return curr
 
 def get_spike_matrix(spike_monitor, num_neurons, len_stim):
     # initialize
@@ -41,7 +63,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 #%% set variables for HH model and neural network
 
 ########### saving and plotting stuff ###########
-root_dir = 'E:/neonates/results/'
+root_dir = 'E:/neonates/results_opto/'
 v = 5 
 to_plot = 0
 to_save = 0
@@ -53,7 +75,8 @@ n_neurons = 100
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-simulation_time = 10 * second
+num_reps = 10
+simulation_time = 9 * second * num_reps
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
 PYRs2keep = 80
@@ -97,6 +120,14 @@ num_imputs = 100
 epsilonPoisson = 1
 input_factor = 1.5
 
+########### ramp parameters ###########
+stim_start = int(3 * 1000 / 0.1)
+stim_end = int(6 * 1000 / 0.1)
+t_end = int(9 * 1000 / 0.1)
+unit_time = 0.1 * ms
+amplitude_start = 0 * pamp
+amplitude_end = + 2.5 * namp
+
 # Neuron equations
 eqsPYR = '''
 dV/dt = (-gea*(V-VrevE) - gi*(V-VrevI) - (V-Vl)) / (tau) + sigma/tau**.5*xi : volt
@@ -107,12 +138,13 @@ Cm : farad
 sigma : volt
 '''
 eqsIN = '''
-dV/dt = (-gea*(V-VrevE) - gi*(V-VrevI) - (V-Vl)) / (tau) + sigma/tau**.5*xi: volt
+dV/dt = (-gea*(V-VrevE) - gi*(V-VrevI) - (V-Vl)) / (tau) + sigma/tau**.5*xi + Istim / Cm: volt
 dgea/dt = -gea/(tau_AMPA_I) : 1
 dgi/dt = -gi/(tau_GABA) : 1
 tau : second
 Cm : farad
 sigma : volt
+Istim = ramp(t) : amp
 '''
 
 ########### parameters to loop over ###########
@@ -122,6 +154,10 @@ GABA_mods   = np.linspace(0.25,1.5,21)
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
         print('working on AMPA ' + str(iAMPA) + ' GABA ' + str(iGABA))
+        
+        # define ramp stimulation
+        ramp = get_ramp_current(stim_start, stim_end, t_end, unit_time, amplitude_start,
+                                amplitude_end, num_reps)
 
         ########### define neuron groups ###########
         PYRs = NeuronGroup(nPYRS,
@@ -171,7 +207,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         # connect to INs
         #SIN = Synapses(extInput, IN, 'w: 1', on_pre='gea+=w*(rand() + 1)')
         #SIN.connect(p=epsilonPoisson); SIN.w = gEI_AMPA / gLeakI; SPYR.delay = 0 * ms
-
+        
         # record spikes of excitatory neurons
         Sp_E = SpikeMonitor(PYRs, record=True)
         # record spikes of inhibitory neurons
