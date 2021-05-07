@@ -177,10 +177,10 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         IN.sigma = 10 * mV
                           
         # define AMPA and GABA synapses parameters
-        Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w*(rand() + 1)')
-        Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w*(rand() + 1)')
-        Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w*(rand() + 1)')
-        Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w*(rand() + 1)')
+        Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
+        Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
+        Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
+        Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
 
         Cee.connect(p=0.2); Cee.delay = 0 * ms
         Cee.w = gEE_AMPA * AMPA_mod / gLeakE 
@@ -202,10 +202,10 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         input_rate = input_factor * Hz
         extInput = PoissonGroup(num_imputs, rates=input_rate)
         # connect to PYRs
-        SPYR = Synapses(extInput, PYRs, 'w: 1', on_pre='gea+=w*(rand() + 1)')
+        SPYR = Synapses(extInput, PYRs, 'w: 1', on_pre='gea+=w')
         SPYR.connect(p=epsilonPoisson); SPYR.w = gEE_AMPA_ext * AMPA_mod / gLeakE; SPYR.delay = 0 * ms
         # connect to INs
-        #SIN = Synapses(extInput, IN, 'w: 1', on_pre='gea+=w*(rand() + 1)')
+        #SIN = Synapses(extInput, IN, 'w: 1', on_pre='gea+=w')
         #SIN.connect(p=epsilonPoisson); SIN.w = gEI_AMPA / gLeakI; SPYR.delay = 0 * ms
         
         # record spikes of excitatory neurons
