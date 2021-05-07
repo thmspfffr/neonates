@@ -12,7 +12,7 @@ v3 = changed parameter set:
         - AMPA_mods from np.linspace(0.75,1.5,11) to np.linspace(0.75,3,21)
         - GABA_mods from np.linspace(0.5,1.2,11) to np.linspace(0.25,1.5,21)
      extended simulation time from 10 to 60 seconds
-
+v4 = changed ext input to 1.5 Hz as in the eLife model
 """
 
 #%% import package and define functions
@@ -40,7 +40,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'D:/models_neonates/results/'
-v = 3 
+v = 4 
 to_plot = 0
 to_save = 0
 start_dataset = 0
@@ -91,7 +91,7 @@ tau_GABA = 8.0 * ms                          # Decay constant of GABA-type condu
 ########### excitatory input parameters ###########
 num_imputs = 100
 epsilonPoisson = 1
-input_factor = 5
+input_factor = 1.5
 
 # Neuron equations
 eqsPYR = '''
