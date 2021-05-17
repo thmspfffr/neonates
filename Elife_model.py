@@ -43,8 +43,8 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 #%% set variables for HH model and neural network
 
 ########### saving and plotting stuff ###########
-root_dir = 'E:/neonates/results/'
-v = 6 
+root_dir = 'D:/models_neonates/results/'
+v = 7 
 to_plot = 0
 to_save = 0
 start_dataset = 0
@@ -101,7 +101,6 @@ dV/dt = (-gea*(V-VrevE) - gi*(V-VrevI) - (V-Vl)) / (tau) + sigma/tau**.5*xi : vo
 dgea/dt = -gea/(tau_AMPA_E) : 1
 dgi/dt = -gi/(tau_GABA) : 1
 tau : second
-Cm : farad
 sigma : volt
 '''
 eqsIN = '''
@@ -109,7 +108,6 @@ dV/dt = (-gea*(V-VrevE) - gi*(V-VrevI) - (V-Vl)) / (tau) + sigma/tau**.5*xi: vol
 dgea/dt = -gea/(tau_AMPA_I) : 1
 dgi/dt = -gi/(tau_GABA) : 1
 tau : second
-Cm : farad
 sigma : volt
 '''
 
@@ -126,7 +124,6 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                            model=eqsPYR,
                            threshold = "V > Vthr",  reset = "V = Vrest",
                            refractory=refractoryE)
-        PYRs.Cm = CmE
         PYRs.tau = CmE / gLeakE
         PYRs.sigma = 10 * mV
                             
@@ -134,7 +131,6 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                          model=eqsIN,
                          threshold = "V > Vthr",  reset = "V = Vrest",
                          refractory=refractoryI)
-        IN.Cm = CmI
         IN.tau = CmI / gLeakI      
         IN.sigma = 10 * mV
                           
