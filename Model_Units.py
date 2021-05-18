@@ -97,19 +97,19 @@ input_factor = 1.5
 
 # Neuron equations
 eqsPYR = '''
-dV/dt = (-gAMPA*(V-VrevE) - gGABA*(V-VrevI) - gLeak*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
+dV/dt = (-gAMPA_E*(V-VrevE) - gGABA_E*(V-VrevI) - gLeak_E*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
 dggAMPA_E/dt = -gAMPA_E/(tau_AMPA_E) : siemens
 dgGABA_E/dt = -gGABA_E/(tau_GABA) : siemens
-gLeak : siemens
+gLeak_E : siemens
 Cm : farad
 sigma : volt
 tau : second
 '''
 eqsIN = '''
-dV/dt = (-gAMPA*(V-VrevE) - gGABA*(V-VrevI) - gLeak*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
+dV/dt = (-gAMPA_I*(V-VrevE) - gGABA_I*(V-VrevI) - gLeak_I*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
 dgAMPA_I/dt = -gAMPA_I/(tau_AMPA_E) : siemens
 dgGABA_I/dt = -gGABA_I/(tau_GABA) : siemens
-gLeak : siemens
+gLeak_I : siemens
 Cm : farad
 sigma : volt
 tau : second
@@ -129,7 +129,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                            threshold = "V > Vthr",  reset = "V = Vrest",
                            refractory=refractoryE)
         PYRs.Cm = CmE
-        PYRs.gLeak = gLeakE
+        PYRs.gLeak_E = gLeakE
         PYRs.tau = CmE / gLeakE
         PYRs.sigma = 10 * mV
                             
@@ -138,7 +138,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                          threshold = "V > Vthr",  reset = "V = Vrest",
                          refractory=refractoryI)
         IN.Cm = CmI
-        IN.gLeak = gLeakI
+        IN.gLeak_I = gLeakI
         IN.tau = CmI / gLeakI
         IN.sigma = 10 * mV
                           
