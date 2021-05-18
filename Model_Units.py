@@ -17,6 +17,7 @@ v5 = introduced different conductance levels for various AMPA connections (ext, 
      started modulating also the AMPA conductance of the ext input
 v6 = increase 5x both AMPA and GABA conductances
      increase gI/gE of the parameter space
+v7 = made conductances values with units
 """
 
 #%% import package and define functions
@@ -97,8 +98,8 @@ input_factor = 1.5
 # Neuron equations
 eqsPYR = '''
 dV/dt = (-gAMPA*(V-VrevE) - gGABA*(V-VrevI) - gLeak*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
-dgAMPA/dt = -gAMPA/(tau_AMPA_E) : siemens
-dgGABA/dt = -gGABA/(tau_GABA) : siemens
+dggAMPA_E/dt = -gAMPA_E/(tau_AMPA_E) : siemens
+dgGABA_E/dt = -gGABA_E/(tau_GABA) : siemens
 gLeak : siemens
 Cm : farad
 sigma : volt
@@ -106,8 +107,8 @@ tau : second
 '''
 eqsIN = '''
 dV/dt = (-gAMPA*(V-VrevE) - gGABA*(V-VrevI) - gLeak*(V-Vl)) / Cm + sigma/tau**.5*xi : volt
-dgAMPA/dt = -gAMPA/(tau_AMPA_E) : siemens
-dgGABA/dt = -gGABA/(tau_GABA) : siemens
+dgAMPA_I/dt = -gAMPA_I/(tau_AMPA_E) : siemens
+dgGABA_I/dt = -gGABA_I/(tau_GABA) : siemens
 gLeak : siemens
 Cm : farad
 sigma : volt
@@ -142,10 +143,10 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         IN.sigma = 10 * mV
                           
         # define AMPA and GABA synapses parameters
-        Cee = Synapses(PYRs, PYRs, 'w: siemens', on_pre='gAMPA+=w')
-        Cei = Synapses(PYRs, IN, 'w: siemens', on_pre='gAMPA+=w')
-        Cie = Synapses(IN, PYRs, 'w: siemens', on_pre='gGABA+=w')
-        Cii = Synapses(IN, IN, 'w: siemens', on_pre='gGABA+=w')
+        Cee = Synapses(PYRs, PYRs, 'w: siemens', on_pre='gAMPA_E+=w')
+        Cei = Synapses(PYRs, IN, 'w: siemens', on_pre='gAMPA_I+=w')
+        Cie = Synapses(IN, PYRs, 'w: siemens', on_pre='gGABA_E+=w')
+        Cii = Synapses(IN, IN, 'w: siemens', on_pre='gGABA_I+=w')
 
         Cee.connect(p=0.2); Cee.delay = 0 * ms
         Cee.w = gEE_AMPA * AMPA_mod 
@@ -164,7 +165,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         input_rate = input_factor * Hz
         extInput = PoissonGroup(num_imputs, rates=input_rate)
         # connect to PYRs
-        SPYR = Synapses(extInput, PYRs, 'w: siemens', on_pre='gAMPA+=w')
+        SPYR = Synapses(extInput, PYRs, 'w: siemens', on_pre='gAMPA_E+=w')
         SPYR.connect(p=epsilonPoisson); SPYR.w = gEE_AMPA_ext * AMPA_mod; SPYR.delay = 0 * ms
 
         # record spikes of excitatory neurons
@@ -175,8 +176,8 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Vm_E = StateMonitor(PYRs, 'V', record=True, clock=voltage_clock)
         Vm_I = StateMonitor(IN, 'V', record=True, clock=voltage_clock)
         # record exc. & inh. currents at E
-        gE = StateMonitor(PYRs, 'gAMPA', record=True, clock=voltage_clock)
-        gI = StateMonitor(PYRs, 'gGABA', record=True, clock=voltage_clock)
+        gE = StateMonitor(PYRs, 'gAMPA_E', record=True, clock=voltage_clock)
+        gI = StateMonitor(PYRs, 'gGABA_E', record=True, clock=voltage_clock)
 
         #------------------------------------------------------------------------------
         # Run the simulation
@@ -193,8 +194,8 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         dict2save = {}
         dict2save['spikes_PYR'] = spike_matrixPYR
         dict2save['spikes_IN'] = spike_matrixIN
-        dict2save['gE'] = gE.gAMPA
-        dict2save['gI'] = gI.gGABA
+        dict2save['gE'] = gE.gAMPA_E
+        dict2save['gI'] = gI.gGABA_E
         dict2save['voltage_PYR'] = Vm_E.V
         dict2save['voltage_IN'] = Vm_I.V
         dict2save['g'] = (gIE_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod)
