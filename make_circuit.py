@@ -99,10 +99,9 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     popI.Cm = CmI
     
     # Connections involving AMPA synapses
-    C_DE_DE_AMPA = Connection(popE, popE, 'gea', delay = d)             
-    C_DE_DE_AMPA.connect_full(popE, popE, weight = gEE_AMPA / gLeakE)
-    C_DE_DI_AMPA = Connection(popE, popI, 'gea', weight = gEI_AMPA / gLeakI, delay = d)
-
+    C_DE_DE_AMPA = Connection(popE, popE, 'gea', delay = d, weight = gEE_AMPA / gLeakE, sparseness=0.2)             
+    C_DE_DI_AMPA = Connection(popE, popI, 'gea', delay = d, weight = gEI_AMPA / gLeakI, sparseness=0.2)
+    
     # Connections involving NMDA synapses    
     # Note that due to the all-to-all connectivity, the contribution of NMDA can be calculated efficiently
     selfnmda = IdentityConnection(popE, popE, 'xpre', weight=1.0, delay = d)    
@@ -111,16 +110,16 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
     I_gen = asarray(popI.gen)
 
     # Calculate NMDA contributions in each time step
-    @network_operation(when='start')
-    def update_nmda():
-        sE = sum(E_nmda)
-        E_gen[:] = gEE_NMDA / gLeakE * sE
-        I_gen[:] = gEI_NMDA / gLeakI * sE  
+   # @network_operation(when='start')
+   # def update_nmda():
+   #     sE = sum(E_nmda)
+   #     E_gen[:] = gEE_NMDA / gLeakE * sE
+   #     I_gen[:] = gEI_NMDA / gLeakI * sE  
     
     # Connections involving GABA synapses
-    C_DI_DE = Connection(popI, popE, 'gi', weight = gIE_GABA / gLeakE, delay = d)
-    C_DI_DI = Connection(popI, popI, 'gi', weight = gII_GABA / gLeakI, delay = d)
-    
+    C_DI_DE = Connection(popI, popE, 'gi', delay = d, weight = gIE_GABA / gLeakE, sparseness=0.2)
+    C_DI_DI = Connection(popI, popI, 'gi', delay = d, weight = gII_GABA / gLeakI, sparseness=0.2)   
+
     # External inputs
     extinputE = PoissonGroup(NE, rates = nu_ext_exc) 
     extinputI = PoissonGroup(NI, rates = nu_ext_inh)
@@ -142,16 +141,4 @@ def make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod):
                    'stimconn': stimconn, 
                    'C_DE_DE_AMPA': C_DE_DE_AMPA, 'C_DE_DI_AMPA': C_DE_DI_AMPA, 'C_DI_DE': C_DI_DE, 'C_DI_DI': C_DI_DI }
                      
-    return groups, connections, update_nmda, subgroups
-
-def get_spike_matrix(spike_monitor, num_neurons, len_stim):
-    # initialize
-    spike_matrix = zeros((num_neurons, len_stim + 1), dtype=bool)
-    # loop over neurons that fired at least once
-    for neuron_idx in unique(spike_monitor.spikes):
-        # extract spike_times (in seconds)
-        spike_times = spike_monitor.spiketimes[spike_monitor.spikes == neuron_idx]
-        # convert them to milliseconds
-        spike_times = round_(asarray(spike_times) * 1000).astype(int)
-        spike_matrix[neuron_idx, spike_times] = 1
-    return spike_matrix
+    return groups, connections

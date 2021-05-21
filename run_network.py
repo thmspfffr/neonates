@@ -28,40 +28,40 @@ root_dir = '/home/tpfeffer/neonates/'
 
 from make_circuit import make_circuit
 # Version
-ntrls = 1;
+ntrls = 1
 
 if __name__ == '__main__':
     
     #------------------------------------------------------------------------------ 
     # VERSION 1: Find plausible parameter range (coarse)
     #------------------------------------------------------------------------------ 
-    v = 1
+    #v = 1
+    # Inputs: stimululus, AMPA, NMDA, GABA
+    #inputs      = np.linspace(0.7,0.9,2)
+    #AMPA_mods   = np.linspace(2,6,41)
+    #NMDA_mods   = np.linspace(1,1.2,2)
+    #GABA_mods   = np.linspace(0.7,6.2,56)
+    #runtime     = 60000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 2: Simulate within plausible parameter range
+    #------------------------------------------------------------------------------ 
+    # v = 2
+    # # Inputs: stimululus, AMPA, NMDA, GABA
+    # inputs      = np.linspace(0.7,0.9,2)
+    # AMPA_mods   = np.linspace(2,6,41)
+    # NMDA_mods   = np.linspace(1,1.2,2)
+    # GABA_mods   = np.linspace(0.7,6.2,56)
+    # runtime     = 60000.0 * ms 
+    #------------------------------------------------------------------------------ 
+    # VERSION 3: Same as v2, but double twice the time (and only two inputs)
+    #------------------------------------------------------------------------------ 
+    v = 10
     # Inputs: stimululus, AMPA, NMDA, GABA
     inputs      = np.linspace(0.7,0.9,2)
     AMPA_mods   = np.linspace(2,6,41)
     NMDA_mods   = np.linspace(1,1.2,2)
     GABA_mods   = np.linspace(0.7,6.2,56)
     runtime     = 60000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 2: Simulate within plausible parameter range
-    #------------------------------------------------------------------------------ 
-    #v = 2
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    #inputs      = np.linspace(0.7,1.1,3)
-    #AMPA_mods   = np.linspace(2,6,41)
-    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    #GABA_mods   = np.linspace(0.7,8.9,83)
-    #runtime     = 60000.0 * ms 
-    #------------------------------------------------------------------------------ 
-    # VERSION 3: Same as v2, but double twice the time (and only two inputs)
-    #------------------------------------------------------------------------------ 
-    #v = 3
-    # Inputs: stimululus, AMPA, NMDA, GABA
-    #inputs      = np.linspace(0.9,0.95,1)
-    #AMPA_mods   = np.linspace(0.2,5,21)
-    #NMDA_mods   = np.linspace(1,1,0/0.1+1)
-    #GABA_mods   = np.linspace(2,10,51)
-    #runtime     = 20000.0 * ms 
     #------------------------------------------------------------------------------ 
     # VERSION 4: Same as v3, but double twice the time (and only two inputs)
     #------------------------------------------------------------------------------ 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                       NMDA_mod = NMDA_mods[inmda]
                       GABA_mod = GABA_mods[igaba]
                       
-                      Dgroups, Dconnections, Dnetfunctions, subgroups = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
+                      Dgroups, Dconnections = make_circuit(inp,GABA_mod,AMPA_mod,NMDA_mod)
 
                       # get populations from the integrations circuit
                       popE = Dgroups['DE']
@@ -148,13 +148,13 @@ if __name__ == '__main__':
                       # Run the simulation
                       #------------------------------------------------------------------------------
                       print("Running simulation...")
-                      net = Network(Dgroups.values(),  Dconnections.values(), Dnetfunctions, Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I, gE, gI)
+                      net = Network(Dgroups.values(),  Dconnections.values(), Sp_E, Sp_I, R_E, R_I, Vm_E, Vm_I, gE, gI)
                       net.prepare()
                       net.run(runtime) 
  
                       print("Computing power spectra ...")
                       LFP = np.abs(np.concatenate([gE.values,gI.values])).mean(axis=0)
-                      fxx, pxx = signal.welch(LFP,100,window='hann')
+                      fxx, pxx = signal.welch(LFP,200,window='hann')
 
                       # convert to array and save output has .h5            
                       spt_E = []; spt_E_idx = []

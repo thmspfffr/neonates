@@ -1,18 +1,18 @@
 
 
-v =1;
+v =3;
 
 clear tmp1 tmp2 
 bg = 0
 inmda = 0;
 %%
-v=1
+%v=1
 clear outp frE frI sttcE pxx slp
 mask = logical(tril(ones(400,400),-1));
-% inputs      = np.linspace(0.7,1.1,3)
-% AMPA_mods   = np.linspace(2,6,41)
-% NMDA_mods   = np.linspace(1,1,0/0.1+1)
-% GABA_mods   = np.linspace(0.7,4.8,42)
+% inputs      = np.linspace(0.7,0.9,2)
+%     AMPA_mods   = np.linspace(2,6,41)
+%     NMDA_mods   = np.linspace(1,1.2,2)
+%     GABA_mods   = np.linspace(0.7,6.2,56)
     
 % outp.spikestE = zeros(320,30000,21,22,'uint8');
 % outp.spikesI = zeros(80,30000,21,22,'uint8');
@@ -22,32 +22,33 @@ for iinp = 0:1
 for iampa = 0:40
   iampa
   for inmda=0:1
-    for igaba = 0:82
+    for igaba = 0:55
       for itr = 0
   
    
 %        
-        frE(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/frE');
+        outp.frE(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/frE');
         
-        frI(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/frI');
+       outp.frI(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/frI');
 %         outp.sttc(:,inmda+1,iampa+1,igaba+1,iinp+1)=nanmean(nanmean(sttc,2),3);
 %         sttcE(iampa+1,igaba+1,iinp+1,inmda+1)  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
-stc(iampa+1,igaba+1,iinp+1,inmda+1) = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
+outp.stc(iampa+1,igaba+1,iinp+1,inmda+1) = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/stc');
+
 
         pxx  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/pxx');
                 
         fxx  = h5read(sprintf('~/neonates/proc/v%d/neonates_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'/fxx');
 
-               pxx= pxx(fxx>4 & fxx< 40);
-               fxx = fxx((fxx>4 & fxx< 40));
+               pxx= pxx(fxx>=2 & fxx<= 20);
+               fxx = fxx((fxx>=2 & fxx<= 20));
                
                X = [ones(length(fxx),1) log10(fxx)];
             Y = log10(pxx);
             tmp = X\Y; 
             
-          slp_err(iampa+1,igaba+1,iinp+1,inmda+1) = sum((log10(pxx)-(tmp(1)+tmp(2)*log10(fxx))).^2);
+          outp.slp_err(iampa+1,igaba+1,iinp+1,inmda+1) = sum((log10(pxx)-(tmp(1)+tmp(2)*log10(fxx))).^2);
             
-          slp(iampa+1,igaba+1,iinp+1,inmda+1) = tmp(2);
+          outp.slp(iampa+1,igaba+1,iinp+1,inmda+1) = tmp(2);
 
 %         spikes_tmp = hdf5read(sprintf('~/neonates/proc/v%d/neonates_network_spiketrain_iampa%d_inmda%d_gaba%d_inp%d_tr%d_v%d.h5',v,iampa,inmda, igaba, iinp,itr,v),'spike_train_I');
 %         outp.spikesI(:,:,iampa+1,igaba+1)=uint8(spikes_tmp(:,1:80)');
@@ -59,14 +60,14 @@ stc(iampa+1,igaba+1,iinp+1,inmda+1) = h5read(sprintf('~/neonates/proc/v%d/neonat
       end
     end
 end
-%   save(sprintf('~/neonates/proc/neonates_spiking_inp%d_v%d.mat',iinp,v),'outp','-v7.3')
+   save(sprintf('~/neonates/proc/neonates_spiking_inp%d_v%d.mat',iinp,v),'outp','-v7.3')
 
 end
 
 
 
-
-%% PLOT FR for INT AND PYR    
+exit
+% PLOT FR for INT AND PYR    
 
 iinp = 1;
 inmda = 2;
