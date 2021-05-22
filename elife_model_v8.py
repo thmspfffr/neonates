@@ -15,6 +15,8 @@ v5 = introduced different conductance levels for various AMPA connections (ext, 
 v6 = increase 5x both AMPA and GABA conductances
      increase gI/gE of the parameter space
 v7 = changed definition of gE/gI and added 20 trials for AMPA=15
+v8 = changed g parameters (closer to elife implementation)
+v9 = changed tau_gaba (from 8ms to 5ms)
 """
 
 # random change
@@ -42,7 +44,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
     
 
 #%% set variables for HH model and neural network
-v = 7
+v = 8
 
 ########### saving and plotting stuff ###########
 root_dir = '/home/tpfeffer/neonates/proc/v%d/' %v
@@ -57,19 +59,19 @@ n_neurons = 400
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-simulation_time = 30 * second
+simulation_time = 50 * second
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
 PYRs2keep = 320
 INs2keep = 80
 
 ########### stable connectivity parameters ###########
-gEE_AMPA = 0.178 * 5 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
+gEE_AMPA = 0.178 * 1 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
 #gEE_AMPA_cor = 0.187 * nS		                   # Weight of intra-network AMPA synapses between excitatory neurons
-gEE_AMPA_ext = 0.234 * 5 * nS		               # Weight of external AMPA synapses between excitatory neurons
-gEI_AMPA = 0.254 * 5 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
-gIE_GABA = 2.01 * 5 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
-gII_GABA = 2.7 * 5 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
+gEE_AMPA_ext = 0.234 * 1 * nS		               # Weight of external AMPA synapses between excitatory neurons
+gEI_AMPA = 0.254 * 1 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
+gIE_GABA = 2.01 * 1 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
+gII_GABA = 2.7 * 1 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
     
    
 # Neuron model
@@ -123,7 +125,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
 
         if iAMPA==14:
-            ntr = 20
+            ntr = 1
         else:
             ntr = 1 
 
