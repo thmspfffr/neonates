@@ -24,8 +24,8 @@ for iAmpa = 0:20
     continue
   end
   iAmpa
-  if iAmpa == 14
-    ntr = 1;
+  if iAmpa == 3
+    ntr = 20;
   else
     ntr = 1;
   end
