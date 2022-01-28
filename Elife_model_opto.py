@@ -66,34 +66,33 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 #%% set variables for HH model and neural network
 
 ########### saving and plotting stuff ###########
-root_dir = 'E:/neonates/results_opto/'
-v = 5 
+root_dir = 'E:/neonates/results_opto/ArchT_'
+v = 6 # version
+to_plot = 0
+to_save = 0
+start_dataset = 0
+num_datasets = 1
 
 ########### network parameters ###########
 n_neurons = 100
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-num_reps = 5
-simulation_time = 9 * second * num_reps
+simulation_time = 90 * second
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
 PYRs2keep = 80
 INs2keep = 20
 
 ########### stable connectivity parameters ###########
-gEE_AMPA = 0.178 * 5 * nS		                  # Weight of recurrent AMPA synapses between excitatory neurons
-#gEE_AMPA_cor = 0.187 * nS		              # Weight of intra-network AMPA synapses between excitatory neurons
-gEE_AMPA_ext = 0.234 * 5 * nS		              # Weight of external AMPA synapses between excitatory neurons
+gEE_AMPA = 0.178 * 5 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
+#gEE_AMPA_cor = 0.187 * nS		                   # Weight of intra-network AMPA synapses between excitatory neurons
+gEE_AMPA_ext = 0.234 * 5 * nS		               # Weight of external AMPA synapses between excitatory neurons
 gEI_AMPA = 0.254 * 5 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
 gIE_GABA = 2.01 * 5 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
 gII_GABA = 2.7 * 5 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
     
-
-# Connectivity - external connections
-gextE = 0.234 * nS                            # Weight of external input to excitatory neurons: Increased from previous value
-gextI = 0.317 * nS                            # Weight of external input to inhibitory neurons
-    
+   
 # Neuron model
 CmE = 0.5 * nF                               # Membrane capacitance of excitatory neurons
 CmI = 0.2 * nF                               # Membrane capacitance of inhibitory neurons
@@ -117,7 +116,7 @@ tau_GABA = 8.0 * ms                          # Decay constant of GABA-type condu
 ########### excitatory input parameters ###########
 num_imputs = 100
 epsilonPoisson = 1
-input_factor = 5
+input_factor = 3
 
 ########### ramp parameters ###########
 stim_start = int(3 * 1000 / 0.1)
@@ -125,7 +124,8 @@ stim_end = int(6 * 1000 / 0.1)
 t_end = int(9 * 1000 / 0.1)
 unit_time = 0.1 * ms
 amplitude_start = 0 * pamp
-amplitude_end = 1 * namp
+amplitude_end = -.1 * namp
+num_reps = 10
 
 # Neuron equations
 eqsPYR = '''
@@ -147,8 +147,8 @@ Istim = ramp(t) : amp
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.75,1.25,3)
-GABA_mods   = np.linspace(0.75,1.25,3)
+AMPA_mods   = np.r_[1, 2, 2.5]
+GABA_mods   = np.r_[0.5, 1, 2]
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
@@ -179,7 +179,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
         Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
         Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
-        Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
+        #Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
 
         Cee.connect(p=0.2); Cee.delay = 0 * ms
         Cee.w = gEE_AMPA * AMPA_mod / gLeakE 
@@ -187,8 +187,8 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cei.w = gEI_AMPA * AMPA_mod / gLeakI
         Cie.connect(p=0.2); Cie.delay = 0 * ms
         Cie.w = gIE_GABA * GABA_mod / gLeakE
-        Cii.connect(p=0.2); Cii.delay = 0 * ms
-        Cii.w = gII_GABA * GABA_mod / gLeakI
+        #Cii.connect(p=0.2); Cii.delay = 0 * ms
+        #Cii.w = gII_GABA * GABA_mod / gLeakI
 
         # initialize voltage
         PYRs.V = Vrest + (rand(nPYRS) * 5 - 5) * mV

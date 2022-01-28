@@ -44,7 +44,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/results/'
-v = 6 
+v = 6 # version
 to_plot = 0
 to_save = 0
 start_dataset = 0
