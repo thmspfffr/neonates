@@ -128,7 +128,7 @@ tau_GABA = 5.0 * ms                          # Decay constant of GABA-type condu
 ########### excitatory input parameters ###########
 num_imputs = 100
 epsilonPoisson = 1
-input_factor = 1.5
+input_factor = 5
 
 ########### ramp parameters ###########
 stim_start = int(3 * 1000 / 0.1)
@@ -136,8 +136,8 @@ stim_end = int(6 * 1000 / 0.1)
 t_end = int(9 * 1000 / 0.1)
 unit_time = 0.1 * ms
 amplitude_start = 0 * pamp
-amplitude_end = -0.025 * namp
-num_reps = 3
+amplitude_end = -0.05 * namp
+num_reps = 5
 simulation_time = 9 * second * num_reps
 
 # define ramp stimulation
@@ -164,89 +164,94 @@ Istim = ramp(t) : amp
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.5,2,6)
+AMPA_mods   = np.linspace(0.5,3,6)
 GABA_mods   = np.linspace(0.5,2,6)
+connectivities = np.linspace(.2, 1, 5)
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
-        print('working on AMPA ' + str(iAMPA) + ' GABA ' + str(iGABA))
-
-        ########### define neuron groups ###########
-        PYRs = NeuronGroup(nPYRS, method='euler',
-                        model=eqsPYR,
-                        threshold = "V>Vthr",  reset = "V=Vrest",
-                        refractory=refractoryE)
-        PYRs.Cm = CmE
-        PYRs.tau = CmE / gLeakE
-        PYRs.sigma = 10 * mV
+        for iConn, connectivity in enumerate(connectivities):
+            print('working on AMPA ' + str(iAMPA) + ' GABA ' + str(iGABA) + ' Conn ' + str(iConn))
+    
+            ########### define neuron groups ###########
+            PYRs = NeuronGroup(nPYRS, method='euler',
+                            model=eqsPYR,
+                            threshold = "V>Vthr",  reset = "V=Vrest",
+                            refractory=refractoryE)
+            PYRs.Cm = CmE
+            PYRs.tau = CmE / gLeakE
+            PYRs.sigma = 10 * mV
+                                
+            IN = NeuronGroup(nINs, method='euler',
+                            model=eqsIN,
+                            threshold = "V>Vthr",  reset = "V=Vrest",
+                            refractory=refractoryI)
+            IN.Cm = CmI
+            IN.tau = CmI / gLeakI      
+            IN.sigma = 10 * mV
                             
-        IN = NeuronGroup(nINs, method='euler',
-                        model=eqsIN,
-                        threshold = "V>Vthr",  reset = "V=Vrest",
-                        refractory=refractoryI)
-        IN.Cm = CmI
-        IN.tau = CmI / gLeakI      
-        IN.sigma = 10 * mV
-                        
-        # define AMPA and GABA synapses parameters
-        Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
-        Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
-        Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
-        #Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
-
-        Cee.connect(p=0.2); Cee.delay = 0 * ms
-        Cee.w = gEE_AMPA * AMPA_mod / gLeakE 
-        Cei.connect(p=0.4); Cei.delay = 0 * ms
-        Cei.w = gEI_AMPA * AMPA_mod / gLeakI
-        Cie.connect(p=0.4); Cie.delay = 0 * ms
-        Cie.w = gIE_GABA * GABA_mod / gLeakE
-        #Cii.connect(p=0.2); Cii.delay = 0 * ms
-        #Cii.w = gII_GABA * GABA_mod / gLeakI
-
-        # initialize voltage
-        PYRs.V = Vrest + (rand(nPYRS) * 5 - 5) * mV
-        IN.V = Vrest + (rand(nINs) * 5 - 5) * mV    
-
-        # Generate a Poisson stimulus to inject into the network
-        # number of neurons that provide excitation
-        # set input rate as something that is log-normal
-        #input_rate = exp(np.random.normal(input_factor, 0.5, num_imputs)) * Hz
-        input_rate = input_factor * Hz
-        extInput = PoissonGroup(num_imputs, rates=input_rate)
-        # connect to PYRs
-        SPYR = Synapses(extInput, PYRs, 'w: 1', on_pre='gea+=w')
-        SPYR.connect(p=epsilonPoisson); SPYR.w = gEE_AMPA_ext * AMPA_mod / gLeakE; SPYR.delay = 0 * ms
-
-        # record spikes of excitatory neurons
-        Sp_E = SpikeMonitor(PYRs, record=True)
-        # record spikes of inhibitory neurons
-        Sp_I = SpikeMonitor(IN, record=True)
-        # record voltage
-        Vm_E = StateMonitor(PYRs, 'V', record=True, clock=voltage_clock)
-        Vm_I = StateMonitor(IN, 'V', record=True, clock=voltage_clock)
-        # record exc. & inh. currents at E
-        gE = StateMonitor(PYRs, 'gea', record=True, clock=voltage_clock)
-        gI = StateMonitor(PYRs, 'gi', record=True, clock=voltage_clock)
-
-        #------------------------------------------------------------------------------
-        # Run the simulation
-        #------------------------------------------------------------------------------
-        run(simulation_time) 
-
-        spike_matrixPYR = get_spike_matrix(Sp_E, nPYRS,
-                            int(asarray(simulation_time) * 1000))
-        spike_matrixIN = get_spike_matrix(Sp_I, nINs,
-                            int(asarray(simulation_time) * 1000))
-        
-        dict2save = {}
-        dict2save['spikes_PYR'] = spike_matrixPYR
-        dict2save['spikes_IN'] = spike_matrixIN
-        dict2save['gE'] = gE.gea
-        dict2save['gI'] = gI.gi
-        dict2save['voltage_PYR'] = Vm_E.V
-        dict2save['voltage_IN'] = Vm_I.V
-        dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
-        savemat(root_dir + 'eLife_v' + str(v) + '_GABA_' + str(iGABA) + 
-              '_AMPA_' + str(iAMPA) + '.mat', dict2save)
-        
-        del Sp_E, Sp_I, Vm_E, Vm_I, gE, gI
+            # define AMPA and GABA synapses parameters
+            Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
+            Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
+            Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
+            Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
+    
+            Cee.connect(p=connectivity); Cee.delay = 0 * ms
+            Cee.w = gEE_AMPA * AMPA_mod / gLeakE 
+            Cei.connect(p=connectivity); Cei.delay = 0 * ms
+            Cei.w = gEI_AMPA * AMPA_mod / gLeakI
+            Cie.connect(p=connectivity); Cie.delay = 0 * ms
+            Cie.w = gIE_GABA * GABA_mod / gLeakE
+            Cii.connect(p=connectivity); Cii.delay = 0 * ms
+            Cii.w = gII_GABA * GABA_mod / gLeakI
+    
+            # initialize voltage
+            PYRs.V = Vrest + (rand(nPYRS) * 5 - 5) * mV
+            IN.V = Vrest + (rand(nINs) * 5 - 5) * mV    
+    
+            # Generate a Poisson stimulus to inject into the network
+            # number of neurons that provide excitation
+            # set input rate as something that is log-normal
+            #input_rate = exp(np.random.normal(input_factor, 0.5, num_imputs)) * Hz
+            input_rate = input_factor * Hz
+            extInput = PoissonGroup(num_imputs, rates=input_rate)
+            # connect to PYRs
+            SPYR = Synapses(extInput, PYRs, 'w: 1', on_pre='gea+=w')
+            SPYR.connect(p=epsilonPoisson); SPYR.w = gEE_AMPA_ext * AMPA_mod / gLeakE; SPYR.delay = 0 * ms
+            SIN = Synapses(extInput, IN, 'w: 1', on_pre='gea+=w')
+            SIN.connect(p=epsilonPoisson); SIN.w = gEE_AMPA_ext * AMPA_mod / gLeakI; SPYR.delay = 0 * ms
+    
+            # record spikes of excitatory neurons
+            Sp_E = SpikeMonitor(PYRs, record=True)
+            # record spikes of inhibitory neurons
+            Sp_I = SpikeMonitor(IN, record=True)
+            # record voltage
+            Vm_E = StateMonitor(PYRs, 'V', record=True, clock=voltage_clock)
+            Vm_I = StateMonitor(IN, 'V', record=True, clock=voltage_clock)
+            # record exc. & inh. currents at E
+            gE = StateMonitor(PYRs, 'gea', record=True, clock=voltage_clock)
+            gI = StateMonitor(PYRs, 'gi', record=True, clock=voltage_clock)
+    
+            #------------------------------------------------------------------------------
+            # Run the simulation
+            #------------------------------------------------------------------------------
+            run(simulation_time) 
+    
+            spike_matrixPYR = get_spike_matrix(Sp_E, nPYRS,
+                                int(asarray(simulation_time) * 1000))
+            spike_matrixIN = get_spike_matrix(Sp_I, nINs,
+                                int(asarray(simulation_time) * 1000))
+            
+            dict2save = {}
+            dict2save['spikes_PYR'] = spike_matrixPYR
+            dict2save['spikes_IN'] = spike_matrixIN
+            dict2save['gE'] = gE.gea
+            dict2save['gI'] = gI.gi
+            dict2save['connectivity'] = connectivity
+            dict2save['voltage_PYR'] = Vm_E.V
+            dict2save['voltage_IN'] = Vm_I.V
+            dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
+            savemat(root_dir + 'ext_inp_IN_eLife_v' + str(v) + '_GABA_' + str(iGABA) + 
+                  '_AMPA_' + str(iAMPA) + '_conn_' + str(iConn) + '.mat', dict2save)
+            
+            del Sp_E, Sp_I, Vm_E, Vm_I, gE, gI
