@@ -135,15 +135,21 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
         Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
         Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
+        
+        # compute average of actual conductances
+        gEE = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2)
+        gEI = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs)
+        gIE = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs)
+        gII = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2) / 5
 
         Cee.connect(p=connectivity); Cee.delay = 0 * ms
-        Cee.w = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2) 
+        Cee.w = gEE
         Cei.connect(p=connectivity); Cei.delay = 0 * ms
-        Cei.w = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs)
+        Cei.w = gEI
         Cie.connect(p=connectivity); Cie.delay = 0 * ms
-        Cie.w = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs)
+        Cie.w = gIE
         Cii.connect(p=connectivity); Cii.delay = 0 * ms
-        Cii.w = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2) / 5
+        Cii.w = gII
 
         # initialize voltage
         PYRs.V = Vrest + (rand(nPYRS) * 5 - 5) * mV
@@ -182,6 +188,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         spike_matrixIN = get_spike_matrix(Sp_I, nINs,
                             int(asarray(simulation_time) * 1000))
         
+                
         dict2save = {}
         dict2save['spikes_PYR'] = spike_matrixPYR
         dict2save['spikes_IN'] = spike_matrixIN
@@ -190,7 +197,8 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         dict2save['connectivity'] = connectivity
         dict2save['voltage_PYR'] = Vm_E.V
         dict2save['voltage_IN'] = Vm_I.V
-        dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
+        dict2save['g'] = (mean(gIE) + mean(gII)) / (mean(gEE) + mean(gEI))  
+        dict2save['g_med'] = (median(gIE) + median(gII)) / (median(gEE) + median(gEI))  
         savemat(root_dir + str(v) + '_GABA_' + str(iGABA) + '_AMPA_' + str(iAMPA) + '.mat', dict2save)
         
         del Sp_E, Sp_I#, gE, gI, Vm_E, Vm_I, 
