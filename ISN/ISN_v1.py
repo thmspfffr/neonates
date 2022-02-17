@@ -131,7 +131,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
         Cei = Synapses(PYRs, IN, 'w: 1', on_pre='gea+=w')
         Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
-        #Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
+#        Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
 
         Cee.connect(p=connectivity); Cee.delay = 0 * ms
         Cee.w = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2) 
@@ -139,8 +139,8 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cei.w = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs)
         Cie.connect(p=connectivity); Cie.delay = 0 * ms
         Cie.w = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs)
-        Cii.connect(p=connectivity); Cii.delay = 0 * ms
-        Cii.w = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2)
+#        Cii.connect(p=connectivity); Cii.delay = 0 * ms
+#        Cii.w = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2)
 
         # initialize voltage
         PYRs.V = Vrest + (rand(nPYRS) * 5 - 5) * mV
