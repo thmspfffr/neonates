@@ -101,7 +101,7 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.5,2,5)
+AMPA_mods   = np.linspace(2,5,5)
 GABA_mods   = np.linspace(0.5,2,21)
 connectivity = 1
 
@@ -134,7 +134,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
             #Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
     
             Cee.connect(p=connectivity); Cee.delay = 0 * ms
-            Cee.w = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2) 
+            Cee.w = lognormal(0, 1, nPYRS**2) / lognormal(0, 1, nPYRS**2).mean() * gEE_AMPA * AMPA_mod / gLeakE
             #Cei.connect(p=connectivity); Cei.delay = 0 * ms
             #Cei.w = gEI_AMPA * AMPA_mod / gLeakI
             #Cie.connect(p=0.2); Cie.delay = 0 * ms

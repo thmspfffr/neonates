@@ -105,7 +105,7 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.5,2,9)
+AMPA_mods   = np.linspace(0.5,1,9)
 GABA_mods   = np.linspace(0.5,2,9)
 connectivity = 1
 
@@ -137,10 +137,10 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
         
         # compute average of actual conductances
-        gEE = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2)
-        gEI = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs)
-        gIE = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs)
-        gII = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2) / 5
+        gEE = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2) * AMPA_mod
+        gEI = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs) * AMPA_mod
+        gIE = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs) * GABA_mod
+        gII = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2) / 5 * GABA_mod
 
         Cee.connect(p=connectivity); Cee.delay = 0 * ms
         Cee.w = gEE

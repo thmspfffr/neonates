@@ -102,8 +102,8 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.5,2,5)
-GABA_mods   = np.linspace(0.5,2,5)
+AMPA_mods   = np.linspace(4,8,5)
+GABA_mods   = np.linspace(4,8,5)
 connectivity = 1
 
 #%% now actually run the model
@@ -134,11 +134,11 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
 #        Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
 
         Cee.connect(p=connectivity); Cee.delay = 0 * ms
-        Cee.w = lognormal(gEE_AMPA * AMPA_mod / gLeakE, gEE_AMPA * AMPA_mod / gLeakE, nPYRS**2) 
+        Cee.w = lognormal(0, 1, nPYRS**2) / lognormal(0, 1, nPYRS**2).mean() * gEE_AMPA * AMPA_mod / gLeakE
         Cei.connect(p=connectivity); Cei.delay = 0 * ms
-        Cei.w = lognormal(gEI_AMPA * AMPA_mod / gLeakI, gEI_AMPA * AMPA_mod / gLeakI, nPYRS*nINs)
+        Cei.w = lognormal(0, 1,nPYRS*nINs) / lognormal(0, 1, nPYRS*nINs).mean() * gEI_AMPA * AMPA_mod / gLeakI
         Cie.connect(p=connectivity); Cie.delay = 0 * ms
-        Cie.w = lognormal(gIE_GABA * GABA_mod / gLeakE, gIE_GABA * GABA_mod / gLeakE, nPYRS*nINs)
+        Cie.w = lognormal(0, 1, nPYRS*nINs) / lognormal(0, 1, nPYRS*nINs).mean() * gIE_GABA * GABA_mod / gLeakE
 #        Cii.connect(p=connectivity); Cii.delay = 0 * ms
 #        Cii.w = lognormal(gII_GABA * GABA_mod / gLeakI, gII_GABA * GABA_mod / gLeakI, nINs**2)
 
@@ -182,12 +182,12 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         dict2save = {}
         dict2save['spikes_PYR'] = spike_matrixPYR
         dict2save['spikes_IN'] = spike_matrixIN
-        dict2save['gE'] = gE.gea
-        dict2save['gI'] = gI.gi
-        dict2save['connectivity'] = connectivity
-        dict2save['voltage_PYR'] = Vm_E.V
-        dict2save['voltage_IN'] = Vm_I.V
-        dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
+#        dict2save['gE'] = gE.gea
+#        dict2save['gI'] = gI.gi
+#        dict2save['connectivity'] = connectivity
+#        dict2save['voltage_PYR'] = Vm_E.V
+#        dict2save['voltage_IN'] = Vm_I.V
+#        dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
         savemat(root_dir + str(v) + '_GABA_' + str(iGABA) + '_AMPA_' + str(iAMPA) + '.mat', dict2save)
         
         del Sp_E, Sp_I#, gE, gI, Vm_E, Vm_I, 
