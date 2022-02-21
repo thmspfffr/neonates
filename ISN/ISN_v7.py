@@ -1,8 +1,6 @@
-""
-
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb 18 09:04:32 2022
+Created on Mon Feb 21 11:24:28 2022
 
 @author: mchini
 
@@ -16,6 +14,7 @@ v3 = introduce II
 v4 = opto with v3 params
 v5 = get rid of ugly lognormal thingy
 v6 = set again to lognormal, and decrease values
+v7 = zoom in on promising parameters
 """
 
 # random change
@@ -44,7 +43,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/ISN_baseline/'
-v = 6
+v = 7
 
 ########### network parameters ###########
 n_neurons = 400
@@ -109,8 +108,8 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.1,3,11)
-GABA_mods   = np.linspace(0.1,5,11)
+AMPA_mods   = np.linspace(0.4,1,11)
+GABA_mods   = np.linspace(0.2,4,11)
 connectivity = 1
 
 #%% now actually run the model
