@@ -94,7 +94,6 @@ nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
-simulation_time = 30*second
 PYRs2keep = 320
 INs2keep = 80
 
@@ -160,7 +159,7 @@ connectivity = 1
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
         for iAmpl, amp_end in enumerate(amps_end):
-            if iAMPA == 5 and isin(iGABA, r_[1, 2]):
+            if isin(iAMPA, r_[4, 5]) and isin(iGABA, r_[1, 2, 3]) and isin(iAmpl, r_[3, 4]):
                 # define ramp stimulation
                 ramp = get_ramp_current(stim_start, stim_end, t_end, unit_time, amplitude_start,
                                         amp_end, num_reps)        
@@ -242,12 +241,15 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                 dict2save = {}
                 dict2save['spikes_PYR'] = spike_matrixPYR
                 dict2save['spikes_IN'] = spike_matrixIN
+                dict2save['g'] = (mean(gIE) + mean(gII)) / (mean(gEE) + mean(gEI))  
+                dict2save['g_med'] = (median(gIE) + median(gII)) / (median(gEE) + median(gEI))
+                dict2save['g_pyr'] = mean(gIE) / mean(gEE)
+                dict2save['g_pyr_med'] = median(gIE) / median(gEE)
                 #dict2save['gE'] = gE.gea
                 #dict2save['gI'] = gI.gi
                 #dict2save['connectivity'] = connectivity
                 #dict2save['voltage_PYR'] = Vm_E.V
                 #dict2save['voltage_IN'] = Vm_I.V
-                #dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
                 savemat(root_dir + str(v) + '_GABA_' + str(iGABA) + '_AMPA_' + str(iAMPA) +
                         '_amp_end_' + str(iAmpl)+ '.mat', dict2save)
                 
