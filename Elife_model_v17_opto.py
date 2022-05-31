@@ -109,8 +109,8 @@ PYRs2keep = 320
 INs2keep = 80
 
 ########### stable connectivity parameters ###########
-gEE_AMPA = 0.178 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
-gEE_AMPA_ext = 0.234 * nS		               # Weight of external AMPA synapses between excitatory neurons
+gEE_AMPA = 0.178 * nS		                  # Weight of recurrent AMPA synapses between excitatory neurons
+gEE_AMPA_ext = 0.234 * nS		              # Weight of external AMPA synapses between excitatory neurons
 gEI_AMPA = 0.254 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
 gIE_GABA = 2.01 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
 gII_GABA = 2.7 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)

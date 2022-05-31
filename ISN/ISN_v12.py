@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue May 24 09:18:58 2022
 
 @author: mchini
 
@@ -14,9 +15,11 @@ v4 = opto with v6 params
 v5 = get rid of ugly lognormal thingy
 v6 = set again to lognormal, and decrease values
 v7 = zoom in on promising parameters
-v8 = opto with the same parameters 
+v8 = opto with the same parameters
 v9 = same as v8, just more reps for paper
 v10 = same as v8 (v9?) but with excitatory current
+v11 = same as v9 - opto with inhibitory current and depolarizing GABA
+v12 = same as v10 - opto with excitatory current and depolarizing GABA
 """
 
 # random change
@@ -74,8 +77,8 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 #%% set variables for HH model and neural network
 
 ########### saving and plotting stuff ###########
-root_dir = 'E:/neonates/ISN_baseline/'
-v = 10
+root_dir = 'E:/neonates/ISN_results/'
+v = 12
 
 ########### ramp parameters ###########
 stim_start = int(3 * 1000 / 0.1)
@@ -83,9 +86,9 @@ stim_end = int(6 * 1000 / 0.1)
 t_end = int(9 * 1000 / 0.1)
 unit_time = 0.1 * ms
 amplitude_start = 0 * pamp
-num_reps = 5
+num_reps = 10
 simulation_time = 9 * second * num_reps
-amps_end = linspace(0.05, 0.2, 5) * namp
+amp_end = 0.1625 * namp
 
 ########### network parameters ###########
 n_neurons = 400
@@ -120,7 +123,7 @@ TauI = 10 * ms
 
 # Synapse model
 VrevE = 0 * mV                               # Reversal potential of excitatory synapses
-VrevI = -80 * mV                             # Reversal potential of inhibitory synapses
+VrevsI = r_[-79, -69, -64, -59, -54, -52, -50] * mV                             # Reversal potential of inhibitory synapses
 tau_AMPA_E = 2.0 * ms                        # Decay constant of AMPA-type conductances
 tau_AMPA_I = 1.0 * ms                        # Decay constant of AMPA-type conductances
 tau_GABA = 5.0 * ms                          # Decay constant of GABA-type conductances
@@ -158,8 +161,8 @@ connectivity = 1
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
-        for iAmpl, amp_end in enumerate(amps_end):
-            if isin(iAMPA, r_[4, 5]) and isin(iGABA, r_[1, 2, 3]) and isin(iAmpl, r_[3, 4]):
+        for iVrev, VrevI in enumerate(VrevsI):
+            if isin(iAMPA, r_[4, 5]) and isin(iGABA, r_[1, 2, 3]):
                 # define ramp stimulation
                 ramp = get_ramp_current(stim_start, stim_end, t_end, unit_time, amplitude_start,
                                         amp_end, num_reps)        
@@ -241,13 +244,16 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                 dict2save = {}
                 dict2save['spikes_PYR'] = spike_matrixPYR
                 dict2save['spikes_IN'] = spike_matrixIN
+                dict2save['g'] = (mean(gIE) + mean(gII)) / (mean(gEE) + mean(gEI))  
+                #dict2save['g_med'] = (median(gIE) + median(gII)) / (median(gEE) + median(gEI))
+                #dict2save['g_pyr'] = mean(gIE) / mean(gEE)
+                #dict2save['g_pyr_med'] = median(gIE) / median(gEE)
                 #dict2save['gE'] = gE.gea
                 #dict2save['gI'] = gI.gi
                 #dict2save['connectivity'] = connectivity
                 #dict2save['voltage_PYR'] = Vm_E.V
                 #dict2save['voltage_IN'] = Vm_I.V
-                #dict2save['g'] = (gIE_GABA * GABA_mod + gII_GABA * GABA_mod) / (gEE_AMPA * AMPA_mod + gEI_AMPA * AMPA_mod)  
                 savemat(root_dir + str(v) + '_GABA_' + str(iGABA) + '_AMPA_' + str(iAMPA) +
-                        '_amp_end_' + str(iAmpl)+ '.mat', dict2save)
+                        '_VrevI_' + str(iVrev)+ '.mat', dict2save)
                 
                 del Sp_E, Sp_I#, gE, gI, Vm_E, Vm_I, 
