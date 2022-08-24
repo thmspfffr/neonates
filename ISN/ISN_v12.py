@@ -224,6 +224,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                 Sp_E = SpikeMonitor(PYRs, record=True)
                 # record spikes of inhibitory neurons
                 Sp_I = SpikeMonitor(IN, record=True)
+                Syn_E = StateMonitor(Cee, 'w', record=Cee[0, :])
                 # record voltage
                 #Vm_E = StateMonitor(PYRs, 'V', record=True, clock=voltage_clock)
                 #Vm_I = StateMonitor(IN, 'V', record=True, clock=voltage_clock)
@@ -244,7 +245,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                 dict2save = {}
                 dict2save['spikes_PYR'] = spike_matrixPYR
                 dict2save['spikes_IN'] = spike_matrixIN
-                dict2save['g'] = (mean(gIE) + mean(gII)) / (mean(gEE) + mean(gEI))  
+                dict2save['g'] = (mean(gIE) + mean(gII)) / (mean(gEE) + mean(gEI))
                 #dict2save['g_med'] = (median(gIE) + median(gII)) / (median(gEE) + median(gEI))
                 #dict2save['g_pyr'] = mean(gIE) / mean(gEE)
                 #dict2save['g_pyr_med'] = median(gIE) / median(gEE)
