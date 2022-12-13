@@ -54,8 +54,8 @@ INs2keep = 20
 ########### conductances parameters ###########
 gEE_AMPA_ext0 = 0.234 * nS		               # Weight of external AMPA synapses onto excitatory neurons
 gEI_AMPA_ext0 = 0.317 * nS		               # Weight of external AMPA synapses onto inhibitory neurons
-gEE_AMPA_ext1 = 0.187 * nS		               # Weight of 2nd external AMPA synapses onto excitatory neurons
-gEI_AMPA_ext1 = 0.254 * nS		               # Weight of 2nd external AMPA synapses onto inhibitory neurons
+gEE_AMPA_ext1 = 0.187 * nS		               # Weight of 2nd external AMPA synapses onto excitatory neurons (currently not used)
+gEI_AMPA_ext1 = 0.254 * nS		               # Weight of 2nd external AMPA synapses onto inhibitory neurons (currently not used)
 gEE_AMPA = 0.178 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
 gEI_AMPA = 0.233 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
 gIE_GABA = 2.01 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
