@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec 12 13:08:18 2022
+Created on Fri Dec 16 11:21:20 2022
 
 @author: mchini
 
 this models is based on Pablo's eLife model and attempts at generating an alpha rhythm within a LIF network
 
 v0 = 1st full attempt
+v1 = move range of sims towards lower EI
+v2 = zoom in on most promising parameters
+v3 = back to v1 parameters with more trials
 """
 
 #%% import package and define functions
@@ -34,7 +37,7 @@ def get_spike_matrix(spike_monitor, num_neurons, len_stim):
 
 ########### saving and plotting stuff ###########
 root_dir = 'E:/neonates/alpha_models/results/'
-v = 0 # version
+v = 3 # version
 to_plot = 1
 to_save = 1
 start_dataset = 0
@@ -45,24 +48,24 @@ n_neurons = 100
 PYRsProp = 0.8
 nPYRS = int(n_neurons * PYRsProp)
 nINs = int(n_neurons - nPYRS)
-simulation_time = 30 * second
+simulation_time = 120 * second
 defaultclock.dt = 0.1 * ms
 voltage_clock = Clock(dt=5*ms) # use different clock to change sampling rate
 PYRs2keep = 80
 INs2keep = 20
 
 ########### conductances parameters ###########
-gEE_AMPA_ext0 = 0.234 * nS		               # Weight of external AMPA synapses onto excitatory neurons
-gEI_AMPA_ext0 = 0.317 * nS		               # Weight of external AMPA synapses onto inhibitory neurons
-gEE_AMPA_ext1 = 0.187 * nS		               # Weight of 2nd external AMPA synapses onto excitatory neurons (currently not used)
-gEI_AMPA_ext1 = 0.254 * nS		               # Weight of 2nd external AMPA synapses onto inhibitory neurons (currently not used)
-gEE_AMPA = 0.178 * nS		                   # Weight of recurrent AMPA synapses between excitatory neurons
-gEI_AMPA = 0.233 * nS                         # Weight of excitatory to inhibitory synapses (AMPA)
-gIE_GABA = 2.01 * nS                          # Weight of inhibitory to excitatory synapses (GABA)
-gII_GABA = 2.7 * nS                           # Weight of inhibitory to inhibitory synapses (GABA)
+gEE_AMPA_ext0 = 0.234 * nS		             # Weight of external AMPA synapses onto excitatory neurons
+gEI_AMPA_ext0 = 0.317 * nS		             # Weight of external AMPA synapses onto inhibitory neurons
+gEE_AMPA_ext1 = 0.187 * nS		             # Weight of 2nd external AMPA synapses onto excitatory neurons (currently not used)
+gEI_AMPA_ext1 = 0.254 * nS		             # Weight of 2nd external AMPA synapses onto inhibitory neurons (currently not used)
+gEE_AMPA = 0.178 * nS		                 # Weight of recurrent AMPA synapses between excitatory neurons
+gEI_AMPA = 0.233 * nS                        # Weight of excitatory to inhibitory synapses (AMPA)
+gIE_GABA = 2.01 * nS                         # Weight of inhibitory to excitatory synapses (GABA)
+gII_GABA = 2.7 * nS                          # Weight of inhibitory to inhibitory synapses (GABA)
     
    
-# Neuron model
+########### Neuron parameters ###########
 CmE = 0.5 * nF                               # Membrane capacitance of excitatory neurons
 CmI = 0.2 * nF                               # Membrane capacitance of inhibitory neurons
 gLeakE = 25.0 * nS                           # Leak conductance of excitatory neurons
@@ -75,17 +78,18 @@ refractoryI = 1 * ms                         # refractory period
 TauE = 20 * ms
 TauI = 10 * ms
 
-# Synapse model
+########### Synapse parameters ###########
 VrevE = 0 * mV                               # Reversal potential of excitatory synapses
 VrevI = -80 * mV                             # Reversal potential of inhibitory synapses
 tau_AMPA_E = 2.0 * ms                        # Decay constant of AMPA-type conductances
 tau_AMPA_I = 1.0 * ms                        # Decay constant of AMPA-type conductances
 tau_GABA = 5.0 * ms                          # Decay constant of GABA-type conductances
+pconnect = 0.2                               # Probability of synaptic connections between neurons (same for E-E, E-I, I-E and I-I)
 
 ########### excitatory input parameters ###########
-num_imputs = 100
-epsilonPoisson = 1
-input_factor = 1.5
+num_imputs = 100                             # number of excitatory inputs to the network
+epsilonPoisson = 1                           # connection probability
+input_factor = 1.5                           # firing rate of the poisson stimulus
 
 # Neuron equations
 eqsPYR = '''
@@ -106,8 +110,8 @@ sigma : volt
 '''
 
 ########### parameters to loop over ###########
-AMPA_mods   = np.linspace(0.75,1.25,3)
-GABA_mods   = np.linspace(0.75,1.25,3)
+AMPA_mods   = np.linspace(0.8,1.1,10)
+GABA_mods   = np.linspace(0.9,1.5,10)
 
 for iAMPA, AMPA_mod in enumerate(AMPA_mods):
     for iGABA, GABA_mod in enumerate(GABA_mods):
@@ -120,7 +124,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                            refractory=refractoryE)
         PYRs.Cm = CmE
         PYRs.tau = CmE / gLeakE
-        PYRs.sigma = 10 * mV
+        PYRs.sigma = 10 * mV # noise parameter - Ornstein–Uhlenbeck process
                             
         IN = NeuronGroup(nINs, method='euler',
                          model=eqsIN,
@@ -128,7 +132,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
                          refractory=refractoryI)
         IN.Cm = CmI
         IN.tau = CmI / gLeakI      
-        IN.sigma = 10 * mV
+        IN.sigma = 10 * mV # noise parameter - Ornstein–Uhlenbeck process
                           
         # define AMPA and GABA synapses parameters
         Cee = Synapses(PYRs, PYRs, 'w: 1', on_pre='gea+=w')
@@ -136,13 +140,13 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         Cie = Synapses(IN, PYRs, 'w: 1', on_pre='gi+=w')
         Cii = Synapses(IN, IN, 'w: 1', on_pre='gi+=w')
 
-        Cee.connect(p=0.2); Cee.delay = 0 * ms
+        Cee.connect(p=pconnect); Cee.delay = 0 * ms
         Cee.w = gEE_AMPA * AMPA_mod / gLeakE 
-        Cei.connect(p=0.2); Cei.delay = 0 * ms
+        Cei.connect(p=pconnect); Cei.delay = 0 * ms
         Cei.w = gEI_AMPA * AMPA_mod / gLeakI
-        Cie.connect(p=0.2); Cie.delay = 0 * ms
+        Cie.connect(p=pconnect); Cie.delay = 0 * ms
         Cie.w = gIE_GABA * GABA_mod / gLeakE
-        Cii.connect(p=0.2); Cii.delay = 0 * ms
+        Cii.connect(p=pconnect); Cii.delay = 0 * ms
         Cii.w = gII_GABA * GABA_mod / gLeakI
 
         # initialize voltage
@@ -151,8 +155,6 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
 
         # Generate a Poisson stimulus to inject into the network
         # number of neurons that provide excitation
-        # set input rate as something that is log-normal
-        #input_rate = exp(np.random.normal(input_factor, 0.5, num_imputs)) * Hz
         input_rate = input_factor * Hz
         extInput = PoissonGroup(num_imputs, rates=input_rate)
         # connect to PYRs
@@ -177,18 +179,17 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         # Run the simulation
         #------------------------------------------------------------------------------
         print("Running simulation...")
-        #net = Network(Sp_E, Sp_I, Vm_E, Vm_I, gE, gI, PYRs, IN, extInput)
         run(simulation_time) 
 
-        spike_matrixPYR = get_spike_matrix(Sp_E, nPYRS,
-                            int(asarray(simulation_time) * 1000))
-        spike_matrixIN = get_spike_matrix(Sp_I, nINs,
-                             int(asarray(simulation_time) * 1000))
+        #spike_matrixPYR = get_spike_matrix(Sp_E, nPYRS,
+        #                    int(asarray(simulation_time) * 1000))
+        #spike_matrixIN = get_spike_matrix(Sp_I, nINs,
+        #                     int(asarray(simulation_time) * 1000))
           
         # save stuff
         dict2save = {}
-        #dict2save['spikes_PYR'] = spike_matrixPYR
-        #dict2save['spikes_IN'] = spike_matrixIN
+        #dict2save['spikes_PYR'] = spike_matrixPYR # not needed for this project
+        #dict2save['spikes_IN'] = spike_matrixIN # not needed for this project
         dict2save['gE'] = gE.gea
         dict2save['gI'] = gI.gi
         dict2save['voltage_PYR'] = Vm_E.V
@@ -197,6 +198,6 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
         savemat(root_dir + 'alpha_v' + str(v) + '_GABA_' + str(iGABA) + 
               '_AMPA_' + str(iAMPA) + '.mat', dict2save)    
             
-        del Sp_E, Sp_I, Vm_E, Vm_I, gE, gI
+        del Vm_E, Vm_I, gE, gI #Sp_E, Sp_I, 
                     
                 
