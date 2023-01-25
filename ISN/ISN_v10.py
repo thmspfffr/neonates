@@ -162,7 +162,7 @@ for iAMPA, AMPA_mod in enumerate(AMPA_mods):
             if isin(iAMPA, r_[4, 5]) and isin(iGABA, r_[1, 2, 3]) and isin(iAmpl, r_[3, 4]):
                 # define ramp stimulation
                 ramp = get_ramp_current(stim_start, stim_end, t_end, unit_time, amplitude_start,
-                                        amp_end, num_reps)        
+                                        amp_end, num_reps)
                 ########### define neuron groups ###########
                 PYRs = NeuronGroup(nPYRS, method='euler',
                                    model=eqsPYR,
